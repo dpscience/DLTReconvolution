@@ -4,7 +4,7 @@ DLTReconvolution - A Python based Software for the Analysis of Lifetime Spectra 
 
 # Short Introduction
 
-
+![DLTReconvolution output](/testData/demo.png)
 
 # How to cite this Software?
 

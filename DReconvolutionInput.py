@@ -33,21 +33,30 @@
 
 from DReconvolutionModel import ReconvolutionModel as reconvModel
 
-#channel resolution [ps] -> x:
-__channelResInPicoseconds = 5.0
-
 #expected number of components (number of exponential decay functions - LIMITED to MAX: 4):
 __numberOfExpDec = 2
 
+#channel/bin resolution [ps]
+__channelResolutionInPs = 5.0
+
+#expected lifetimes (tau) -> start values (levenberg marquardt fit)
+__expectedTau_1_in_ps = 160.0;
+__expectedTau_2_in_ps = 455.0;
+__expectedTau_3_in_ps = 160.0;
+__expectedTau_4_in_ps = 160.0;
+
+#background calculation (right side of spectrum data):
+__bkgrd_startIndex = 8000;
+__bkgrd_count = 1500;
 
 #NOTE: Spectrum and IRF data vectors require equal length!!!
 
 #file path which contains the SPECTRUM data:
-__filePathSpec = r"C:\Users\danny\Desktop\Elsevier - Data in Brief\reconvolution\test3\AB_1_5Mio.dat"
+__filePathSpec = 'testData/spectrum_5ps.dat'
 __specDataDelimiter = '\t'
 
 #file path which contains the IRF data:
-__filePathIRF = r"C:\Users\danny\Desktop\Elsevier - Data in Brief\reconvolution\test3\irf_AB.dat"
+__filePathIRF = 'testData/irf_5ps.dat'
 __irfDataDelimiter = '\t'
 
 
@@ -64,4 +73,4 @@ __bUsingYVarAsWeighting = True
 #Pseudovoigt1   = 3
 #Pearson7       = 4
 #------------------
-__modelType = reconvModel.Pearson7
+__modelType = reconvModel.Gaussian

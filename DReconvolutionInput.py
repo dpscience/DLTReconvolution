@@ -40,8 +40,8 @@ __numberOfExpDec = 2
 __channelResolutionInPs = 5.0
 
 #expected lifetimes (tau) -> start values (levenberg marquardt fit)
-__expectedTau_1_in_ps = 260.0;
-__expectedTau_2_in_ps = 1500.0;
+__expectedTau_1_in_ps = 160.0;
+__expectedTau_2_in_ps = 455.0;
 __expectedTau_3_in_ps = 160.0;
 __expectedTau_4_in_ps = 160.0;
 
@@ -52,11 +52,11 @@ __bkgrd_count = 1500;
 #NOTE: Spectrum and IRF data vectors require equal length!!!
 
 #file path which contains the SPECTRUM data:
-__filePathSpec = 'testData/spectrum2_5ps.dat'
+__filePathSpec = 'testData/spectrum_5ps.dat'
 __specDataDelimiter = '\t'
 
 #file path which contains the IRF data:
-__filePathIRF = 'testData/irf2_5ps.dat'
+__filePathIRF = 'testData/irf_5ps.dat'
 __irfDataDelimiter = '\t'
 
 

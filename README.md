@@ -6,6 +6,64 @@ DLTReconvolution - A Python based Software for the Analysis of Lifetime Spectra 
 
 ![DLTReconvolution output](/testData/demo.png)
 
+### DLTReconvolution consists of 3 python files:
+
+- DReconvolutionInput.py
+- DReconvolutionModel.py
+- DReconvolutionProc.py
+
+### How to start?
+
+1. edit <b>DReconvolutionInput.py</b>:
+
+```python
+#expected number of components (number of exponential decay functions - LIMITED to MAX: 4):
+__numberOfExpDec = 2
+
+#channel/bin resolution [ps]
+__channelResolutionInPs = 5.0
+
+#expected lifetimes (tau) -> start values (levenberg marquardt fit)
+__expectedTau_1_in_ps = 160.0;
+__expectedTau_2_in_ps = 455.0;
+__expectedTau_3_in_ps = 160.0;
+__expectedTau_4_in_ps = 160.0;
+
+#background calculation (right side of spectrum data):
+__bkgrd_startIndex = 8000;
+__bkgrd_count = 1500;
+
+#NOTE: Spectrum and IRF data vectors require equal length!!!
+
+#file path which contains the SPECTRUM data:
+__filePathSpec = 'testData/spectrum_5ps.dat'
+__specDataDelimiter = '\t'
+
+#file path which contains the IRF data:
+__filePathIRF = 'testData/irf_5ps.dat'
+__irfDataDelimiter = '\t'
+
+
+#using model function for IRF?
+__bUsingModel = True
+
+#fit weighting: y variance? w = 1/sqrt(y)
+__bUsingYVarAsWeighting = True
+
+#if using model function? choose type of model (also defined in DReconvolutionModel.py):
+#------------------
+#Gaussian       = 1
+#Lorentz_Cauchy = 2
+#Pseudovoigt1   = 3
+#Pearson7       = 4
+#------------------
+__modelType = reconvModel.Gaussian
+```
+2. run DReconvolutionProc.py
+3. finished!
+
+Note: all parameter estimations required for the best model fit using the levenberg marquardt algorithm are done automatically. 
+
 # How to cite this Software?
 
 You can cite all versions by using the <b>DOI 10.5281/zenodo.1219522</b>. This DOI represents all versions, and will always resolve to the latest one.<br>

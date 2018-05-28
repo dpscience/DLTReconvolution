@@ -39,7 +39,8 @@ __numberOfExpDec = 2
 #channel/bin resolution [ps]
 __channelResolutionInPs = 5.0
 
-#expected lifetimes (tau) -> start values (levenberg marquardt fit)
+#expected lifetimes (tau) -> start values in [ps] (required for the levenberg marquardt fit)
+#note: only the first '__numberOfExpDec' related values are considered (e.g.: for __numberOfExpDec = 2 --> __expectedTau_1_in_ps AND __expectedTau_2_in_ps)
 __expectedTau_1_in_ps = 160.0;
 __expectedTau_2_in_ps = 455.0;
 __expectedTau_3_in_ps = 160.0;

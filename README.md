@@ -73,7 +73,7 @@ You can cite all versions by using the <b>DOI 10.5281/zenodo.1219522</b>. This D
 ## v1.x
 DLTReconvolution v1.0:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1219523.svg)](https://doi.org/10.5281/zenodo.1219523)<br>
 
-#### requirements:
+# Requirements
 - [LMFIT](https://lmfit.github.io/lmfit-py/model.html) 
 - [NumPy](http://www.numpy.org/) 
 - [matplotlib](https://matplotlib.org/)<br>

@@ -107,6 +107,32 @@ if userInput.__bUsingModel:
         #run the fit:
         resultsOfModelIRF = fitModelIRF.fit(yIRF, params=parameterListIRFFit, weights=fitWeightingIRF, method='leastsq', x=xVal);
 
+        chiSquare = resultsOfModelIRF.chisqr;
+        redChiSquare = resultsOfModelIRF.redchi;
+
+        sigma = (float)(resultsOfModelIRF.params['sigma'].value*userInput.__channelResolutionInPs);
+        sigma_err = (float)(resultsOfModelIRF.params['sigma'].stderr*userInput.__channelResolutionInPs);
+
+        amplitude = (float)(resultsOfModelIRF.params['ampl'].value);
+        amplitude_err = (float)(resultsOfModelIRF.params['ampl'].stderr);
+
+        yRes = (float)(resultsOfModelIRF.params['y0'].value);
+        yRes_err = (float)(resultsOfModelIRF.params['y0'].stderr);
+
+
+        print("\nFit results: IRF - Model Function (Type: Gaussian):");
+        print("-----------------------------------------------------");
+        print("X²          = {0}".format(redChiSquare));
+        print("");
+        print("stddev [ps] = {0} ({1})".format(sigma, sigma_err));
+        print("FWHM   [ps] = {0} ({1})".format(sigma*(2*np.sqrt(2*np.log(2))), sigma_err*(2*np.sqrt(2*np.log(2)))));
+        print("");
+        print("amplitude   = {0} ({1})".format(amplitude, amplitude_err));
+        print("");
+        print("background  = {0} ({1})".format(yRes, yRes_err));
+        print("-----------------------------------------------------");
+
+
         plt.figure(1);
         ax = plt.subplot(2,1,1);
         ax.set_title("Best fit: IRF Gaussian model fit");
@@ -123,20 +149,15 @@ if userInput.__bUsingModel:
         #replace input by model fit data:
         yIRF = resultsOfModelIRF.best_fit; 
 
-        print("\nFit results: IRF - Model Function (Type: Gaussian):");
-        print("-----------------------------------------------------");
-        print(resultsOfModelIRF.fit_report());
-        print("-----------------------------------------------------");
 
     #Lorentz/Cauchy:
     if userInput.__modelType == functionModelList.ReconvolutionModel.Lorentz_Cauchy:
         fitModelIRF = Model(functionModelList.Lorentz_Cauchy);
-        fitModelIRF.set_param_hint('a', min=0.0);
+        fitModelIRF.set_param_hint('s', min=0.0);
         fitModelIRF.set_param_hint('ampl', min=0.0);
         fitModelIRF.set_param_hint('y0', min=0.0);
-        fitModelIRF.set_param_hint('wing', min=0.0);
-
-        parameterListIRFFit = fitModelIRF.make_params(x=xVal, ampl=yMaxIRF, a=1, wing=stddevIRF, y0=0, x0=xWhereYMaxIRF, args=yIRF);
+        
+        parameterListIRFFit = fitModelIRF.make_params(x=xVal, ampl=yMaxIRF, s=stddevIRF, y0=0, x0=xWhereYMaxIRF, args=yIRF);
         #change here if you want to fix x0 and/or y0:
         parameterListIRFFit['x0'].vary = True; 
         parameterListIRFFit['y0'].vary = True;
@@ -144,6 +165,31 @@ if userInput.__bUsingModel:
         #run the fit:
         resultsOfModelIRF = fitModelIRF.fit(yIRF, params=parameterListIRFFit, weights=fitWeightingIRF, method='leastsq', x=xVal);
 
+        chiSquare = resultsOfModelIRF.chisqr;
+        redChiSquare = resultsOfModelIRF.redchi;
+
+        s = (float)(resultsOfModelIRF.params['s'].value*userInput.__channelResolutionInPs);
+        s_err = (float)(resultsOfModelIRF.params['s'].stderr*userInput.__channelResolutionInPs);
+
+        amplitude = (float)(resultsOfModelIRF.params['ampl'].value);
+        amplitude_err = (float)(resultsOfModelIRF.params['ampl'].stderr);
+
+        yRes = (float)(resultsOfModelIRF.params['y0'].value);
+        yRes_err = (float)(resultsOfModelIRF.params['y0'].stderr);
+
+
+        print("\nFit results: IRF - Model Function (Type: Lorentz/Cauchy):");
+        print("-----------------------------------------------------------");
+        print("X²          = {0}".format(redChiSquare));
+        print("");
+        print("s [ps]      = {0} ({1})".format(s, s_err));
+        print("");
+        print("amplitude   = {0} ({1})".format(amplitude, amplitude_err));
+        print("");
+        print("background  = {0} ({1})".format(yRes, yRes_err));
+        print("-----------------------------------------------------------");
+
+        
         plt.figure(1);
         ax = plt.subplot(2,1,1);
         ax.set_title("Best fit: IRF Lorentz/Cauchy model fit");
@@ -160,27 +206,62 @@ if userInput.__bUsingModel:
         #replace input by model fit data:
         yIRF = resultsOfModelIRF.best_fit; 
 
-        print("\nFit results: IRF - Model Function (Type: Lorentz/Cauchy):");
-        print("-----------------------------------------------------------");
-        print(resultsOfModelIRF.fit_report());
-        print("-----------------------------------------------------------");
 
     #PseudoVoigt-1:
     if userInput.__modelType == functionModelList.ReconvolutionModel.Pseudovoigt1:
         fitModelIRF = Model(functionModelList.Pseudovoigt1);
-        fitModelIRF.set_param_hint('a', min=0.0);
+        fitModelIRF.set_param_hint('a', min=0.0, max=1.0);
         fitModelIRF.set_param_hint('sigma', min=0.0);
-        fitModelIRF.set_param_hint('wing', min=0.0);
+        fitModelIRF.set_param_hint('s', min=0.0);
         fitModelIRF.set_param_hint('ampl', min=0.0);
         fitModelIRF.set_param_hint('y0', min=0.0);
 
-        parameterListIRFFit = fitModelIRF.make_params(x=xVal, ampl=yMaxIRF, a=1, sigma=stddevIRF, wing=stddevIRF, y0=0, x0=xWhereYMaxIRF, args=yIRF);
+        parameterListIRFFit = fitModelIRF.make_params(x=xVal, ampl=yMaxIRF, a=1, sigma=stddevIRF, s=stddevIRF, y0=0, x0=xWhereYMaxIRF, args=yIRF);
         #change here if you want to fix x0 and/or y0:
         parameterListIRFFit['x0'].vary = True; 
         parameterListIRFFit['y0'].vary = True;
 
         #run the fit:
         resultsOfModelIRF = fitModelIRF.fit(yIRF, params=parameterListIRFFit, weights=fitWeightingIRF, method='leastsq', x=xVal);
+
+        chiSquare = resultsOfModelIRF.chisqr;
+        redChiSquare = resultsOfModelIRF.redchi;
+
+        fract = (float)(resultsOfModelIRF.params['a'].value*userInput);
+        fract_err = (float)(resultsOfModelIRF.params['a'].stderr*userInput);
+        
+        sigma = (float)(resultsOfModelIRF.params['sigma'].value*userInput.__channelResolutionInPs);
+        sigma_err = (float)(resultsOfModelIRF.params['sigma'].stderr*userInput.__channelResolutionInPs);
+        
+        s = (float)(resultsOfModelIRF.params['s'].value*userInput.__channelResolutionInPs);
+        s_err = (float)(resultsOfModelIRF.params['s'].stderr*userInput.__channelResolutionInPs);
+
+        amplitude = (float)(resultsOfModelIRF.params['ampl'].value);
+        amplitude_err = (float)(resultsOfModelIRF.params['ampl'].stderr);
+
+        yRes = (float)(resultsOfModelIRF.params['y0'].value);
+        yRes_err = (float)(resultsOfModelIRF.params['y0'].stderr);
+
+
+        print("\nFit results: IRF - Model Function (Type: PseudoVoigt type 1):");
+        print("---------------------------------------------------------------");
+        print("X²          = {0}".format(redChiSquare));
+        print("");
+        print("amplitude   = {0} ({1})".format(amplitude, amplitude_err));
+        print("background  = {0} ({1})".format(yRes, yRes_err));
+        print("");
+        print("---------------------------------------------------------------");
+        print("G - Gaussian:  a        = {0} ({})".format(fract, fract_err));
+        print("---------------------------------------------------------------");
+        print("stddev [ps] = {0} ({1})".format(sigma, sigma_err));
+        print("FWHM   [ps] = {0} ({1})".format(sigma*(2*np.sqrt(2*np.log(2))), sigma_err*(2*np.sqrt(2*np.log(2)))));
+        print("");
+        print("---------------------------------------------------------------");
+        print("L - Lorentzian: (1 - a) = {0} ({})".format(1-fract, fract_err));
+        print("---------------------------------------------------------------");
+        print("s [ps]      = {0} ({1})".format(s, s_err));
+        print("---------------------------------------------------------------");
+
 
         plt.figure(1);
         ax = plt.subplot(2,1,1);
@@ -198,11 +279,7 @@ if userInput.__bUsingModel:
         #replace input by model fit data:
         yIRF = resultsOfModelIRF.best_fit; 
 
-        print("\nFit results: IRF - Model Function (Type: PseudoVoigt type 1):");
-        print("---------------------------------------------------------------");
-        print(resultsOfModelIRF.fit_report());
-        print("---------------------------------------------------------------");
-
+        
     #Pearson Type VII:
     if userInput.__modelType == functionModelList.ReconvolutionModel.Pearson7:
         fitModelIRF = Model(functionModelList.Pearson7);
@@ -219,6 +296,35 @@ if userInput.__bUsingModel:
         #run the fit:
         resultsOfModelIRF = fitModelIRF.fit(yIRF, params=parameterListIRFFit, weights=fitWeightingIRF, method='leastsq', x=xVal);
 
+        chiSquare = resultsOfModelIRF.chisqr;
+        redChiSquare = resultsOfModelIRF.redchi;
+
+        alpha = (float)(resultsOfModelIRF.params['alpha'].value*userInput.__channelResolutionInPs);
+        alpha_err = (float)(resultsOfModelIRF.params['alpha'].stderr*userInput.__channelResolutionInPs);
+        
+        m = (float)(resultsOfModelIRF.params['m'].value*userInput);
+        m_err = (float)(resultsOfModelIRF.params['m'].stderr*userInput);
+        
+        amplitude = (float)(resultsOfModelIRF.params['ampl'].value);
+        amplitude_err = (float)(resultsOfModelIRF.params['ampl'].stderr);
+
+        yRes = (float)(resultsOfModelIRF.params['y0'].value);
+        yRes_err = (float)(resultsOfModelIRF.params['y0'].stderr);
+
+
+        print("\nFit results: IRF - Model Function (Type: Pearson type 7):");
+        print("-----------------------------------------------------------");
+        print("X²          = {0}".format(redChiSquare));
+        print("");
+        print("alpha [ps]  = {0} ({1})".format(alpha, alpha_err));
+        print("m           = {0} ({1})".format(m, m_err));
+        print("");
+        print("amplitude   = {0} ({1})".format(amplitude, amplitude_err));
+        print("");
+        print("background  = {0} ({1})".format(yRes, yRes_err));
+        print("-----------------------------------------------------------");
+        
+
         plt.figure(1);
         ax = plt.subplot(2,1,1);
         ax.set_title("Best fit: IRF Pearson Type VII model fit");
@@ -234,11 +340,6 @@ if userInput.__bUsingModel:
         
         #replace input by model fit data:
         yIRF = resultsOfModelIRF.best_fit; 
-
-        print("\nFit results: IRF - Model Function (Type: Pearson type 7):");
-        print("-----------------------------------------------------------");
-        print(resultsOfModelIRF.fit_report());
-        print("-----------------------------------------------------------");
 
 
 def convolveData(a, b):
@@ -278,8 +379,8 @@ def ExpDecay_2(x, ampl1, tau1, ampl2, tau2, y0, x0, args=(yIRF)):
     
     irf_shifted = (shift_Incr1 + shift_Incr2)
     irf_norm = irf_shifted/sum(irf_shifted)
-    
-    h = ampl1*np.exp(-(x)/tau1) + ampl2*np.exp(-(x)/tau2)
+
+    h = ampl1*np.exp(-(x)/tau1) + ampl2*np.exp(-(x)/tau2);
     hConvIrf_norm = convolveData(h, irf_norm)
     return hConvIrf_norm + y0
 
@@ -333,21 +434,37 @@ if userInput.__numberOfExpDec == 1:
     parameterListDecayFit['x0'].vary = True; 
     parameterListDecayFit['y0'].vary = True;
 
-    #run the fit:
-    resultsOfModelDecay = fitModelDecay.fit(ySpec, params=parameterListDecayFit, weights=fitWeightingSpec, method='leastsq', x=xVal);
-
-    Isum = (resultsOfModelDecay.best_values['ampl1']);
-
+    #calculate results:
+    chiSquare = resultsOfModelDecay.chisqr;
+    redChiSquare = resultsOfModelDecay.redchi;
+    
     t1 = (float)(resultsOfModelDecay.params['tau1'].value*userInput.__channelResolutionInPs);
     t1_err = (float)(resultsOfModelDecay.params['tau1'].stderr*userInput.__channelResolutionInPs);
 
-    I1 = (float)(resultsOfModelDecay.params['ampl1'].value/Isum);
-    I1_err = (float)(resultsOfModelDecay.params['ampl1'].stderr/Isum);
-
     yRes = (float)(resultsOfModelDecay.params['y0'].value);
     yRes_err = (float)(resultsOfModelDecay.params['y0'].stderr);
+
+    amplitude1 = (float)(resultsOfModelDecay.params['ampl1'].value);
+    amplitude1_err = (float)(resultsOfModelDecay.params['ampl1'].stderr);
+   
+    counts_1 = 0;
     
+    counts_1_stddev = 0;
     
+    for i in range(0, len(xVal)):
+        counts_1 += amplitude1*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t1) + yRes;
+        
+        counts_1_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t1)*(amplitude1_err**2 + (t1_err**2/t1**4)) + yRes_err**2
+        
+    counts_1_err = np.sqrt(counts_1_stddev)/np.sqrt(len(xVal));
+    
+    counts_sum = (counts_1);
+    counts_sum_err = np.sqrt(counts_1_err*counts_1_err);
+
+    I1 = (counts_1/counts_sum)
+    I1_err = np.sqrt((1/counts_sum)**2*counts_1_err**2 + counts_1**2*counts_sum_err**2/counts_sum**4); 
+
+
     print("Fit results: Reconvolution 1 component:");
     print("---------------------------------------");
     print("X²         = {0}".format(redChiSquare));
@@ -389,23 +506,45 @@ if userInput.__numberOfExpDec == 2:
     chiSquare = resultsOfModelDecay.chisqr;
     redChiSquare = resultsOfModelDecay.redchi;
     
-    Isum = (resultsOfModelDecay.best_values['ampl1'] + resultsOfModelDecay.best_values['ampl2']);
-
     t1 = (float)(resultsOfModelDecay.params['tau1'].value*userInput.__channelResolutionInPs);
     t1_err = (float)(resultsOfModelDecay.params['tau1'].stderr*userInput.__channelResolutionInPs);
 
     t2 = (float)(resultsOfModelDecay.params['tau2'].value*userInput.__channelResolutionInPs);
     t2_err = (float)(resultsOfModelDecay.params['tau2'].stderr*userInput.__channelResolutionInPs);
 
-    I1 = (float)(resultsOfModelDecay.params['ampl1'].value/Isum);
-    I1_err = (float)(resultsOfModelDecay.params['ampl1'].stderr/Isum);
-
-    I2 = (float)(resultsOfModelDecay.params['ampl2'].value/Isum);
-    I2_err = (float)(resultsOfModelDecay.params['ampl2'].stderr/Isum);
-
     yRes = (float)(resultsOfModelDecay.params['y0'].value);
     yRes_err = (float)(resultsOfModelDecay.params['y0'].stderr);
+
+    amplitude1 = (float)(resultsOfModelDecay.params['ampl1'].value);
+    amplitude1_err = (float)(resultsOfModelDecay.params['ampl1'].stderr);
+    amplitude2 = (float)(resultsOfModelDecay.params['ampl2'].value);
+    amplitude2_err = (float)(resultsOfModelDecay.params['ampl2'].stderr);
     
+    counts_1 = 0;
+    counts_2 = 0;
+    
+    counts_1_stddev = 0;
+    counts_2_stddev = 0;
+    
+    for i in range(0, len(xVal)):
+        counts_1 += amplitude1*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t1) + yRes;
+        counts_2 += amplitude2*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t2) + yRes;
+
+        counts_1_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t1)*(amplitude1_err**2 + (t1_err**2/t1**4)) + yRes_err**2
+        counts_2_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t2)*(amplitude2_err**2 + (t2_err**2/t2**4)) + yRes_err**2
+
+    counts_1_err = np.sqrt(counts_1_stddev)/np.sqrt(len(xVal));
+    counts_2_err = np.sqrt(counts_2_stddev)/np.sqrt(len(xVal));
+    
+    counts_sum = (counts_1 + counts_2);
+    counts_sum_err = np.sqrt(counts_1_err*counts_1_err + counts_2_err*counts_2_err);
+
+    I1 = (counts_1/counts_sum)
+    I1_err = np.sqrt((1/counts_sum)**2*counts_1_err**2 + counts_1**2*counts_sum_err**2/counts_sum**4); 
+
+    I2 = (counts_2/counts_sum)
+    I2_err = np.sqrt((1/counts_sum)**2*counts_2_err**2 + counts_2**2*counts_sum_err**2/counts_sum**4);  
+
     
     print("Fit results: Reconvolution 2 components:");
     print("----------------------------------------");
@@ -451,8 +590,6 @@ if userInput.__numberOfExpDec == 3:
     chiSquare = resultsOfModelDecay.chisqr;
     redChiSquare = resultsOfModelDecay.redchi;
     
-    Isum = (resultsOfModelDecay.best_values['ampl1'] + resultsOfModelDecay.best_values['ampl2'] + resultsOfModelDecay.best_values['ampl3']);
-
     t1 = (float)(resultsOfModelDecay.params['tau1'].value*userInput.__channelResolutionInPs);
     t1_err = (float)(resultsOfModelDecay.params['tau1'].stderr*userInput.__channelResolutionInPs);
 
@@ -462,17 +599,48 @@ if userInput.__numberOfExpDec == 3:
     t3 = (float)(resultsOfModelDecay.params['tau3'].value*userInput.__channelResolutionInPs);
     t3_err = (float)(resultsOfModelDecay.params['tau3'].stderr*userInput.__channelResolutionInPs);
 
-    I1 = (float)(resultsOfModelDecay.params['ampl1'].value/Isum);
-    I1_err = (float)(resultsOfModelDecay.params['ampl1'].stderr/Isum);
-
-    I2 = (float)(resultsOfModelDecay.params['ampl2'].value/Isum);
-    I2_err = (float)(resultsOfModelDecay.params['ampl2'].stderr/Isum);
-
-    I3 = (float)(resultsOfModelDecay.params['ampl3'].value/Isum);
-    I3_err = (float)(resultsOfModelDecay.params['ampl3'].stderr/Isum);
-
     yRes = (float)(resultsOfModelDecay.params['y0'].value);
     yRes_err = (float)(resultsOfModelDecay.params['y0'].stderr);
+
+    amplitude1 = (float)(resultsOfModelDecay.params['ampl1'].value);
+    amplitude1_err = (float)(resultsOfModelDecay.params['ampl1'].stderr);
+    amplitude2 = (float)(resultsOfModelDecay.params['ampl2'].value);
+    amplitude2_err = (float)(resultsOfModelDecay.params['ampl2'].stderr);
+    amplitude3 = (float)(resultsOfModelDecay.params['ampl3'].value);
+    amplitude3_err = (float)(resultsOfModelDecay.params['ampl3'].stderr);
+    
+    counts_1 = 0;
+    counts_2 = 0;
+    counts_3 = 0;
+    
+    counts_1_stddev = 0;
+    counts_2_stddev = 0;
+    counts_3_stddev = 0;
+    
+    for i in range(0, len(xVal)):
+        counts_1 += amplitude1*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t1) + yRes;
+        counts_2 += amplitude2*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t2) + yRes;
+        counts_3 += amplitude3*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t3) + yRes;
+
+        counts_1_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t1)*(amplitude1_err**2 + (t1_err**2/t1**4)) + yRes_err**2
+        counts_2_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t2)*(amplitude2_err**2 + (t2_err**2/t2**4)) + yRes_err**2
+        counts_3_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t3)*(amplitude3_err**2 + (t3_err**2/t3**4)) + yRes_err**2
+
+    counts_1_err = np.sqrt(counts_1_stddev)/np.sqrt(len(xVal));
+    counts_2_err = np.sqrt(counts_2_stddev)/np.sqrt(len(xVal));
+    counts_3_err = np.sqrt(counts_3_stddev)/np.sqrt(len(xVal));
+    
+    counts_sum = (counts_1 + counts_2 + counts_3);
+    counts_sum_err = np.sqrt(counts_1_err*counts_1_err + counts_2_err*counts_2_err + counts_3_err*counts_3_err);
+
+    I1 = (counts_1/counts_sum)
+    I1_err = np.sqrt((1/counts_sum)**2*counts_1_err**2 + counts_1**2*counts_sum_err**2/counts_sum**4); 
+
+    I2 = (counts_2/counts_sum)
+    I2_err = np.sqrt((1/counts_sum)**2*counts_2_err**2 + counts_2**2*counts_sum_err**2/counts_sum**4);
+
+    I3 = (counts_3/counts_sum)
+    I3_err = np.sqrt((1/counts_sum)**2*counts_3_err**2 + counts_3**2*counts_sum_err**2/counts_sum**4);
     
     
     print("Fit results: Reconvolution 2 components:");
@@ -526,8 +694,6 @@ if userInput.__numberOfExpDec == 4:
     chiSquare = resultsOfModelDecay.chisqr;
     redChiSquare = resultsOfModelDecay.redchi;
     
-    Isum = (resultsOfModelDecay.best_values['ampl1'] + resultsOfModelDecay.best_values['ampl2'] + resultsOfModelDecay.best_values['ampl3'] + resultsOfModelDecay.best_values['ampl4']);
-
     t1 = (float)(resultsOfModelDecay.params['tau1'].value*userInput.__channelResolutionInPs);
     t1_err = (float)(resultsOfModelDecay.params['tau1'].stderr*userInput.__channelResolutionInPs);
 
@@ -540,20 +706,58 @@ if userInput.__numberOfExpDec == 4:
     t4 = (float)(resultsOfModelDecay.params['tau4'].value*userInput.__channelResolutionInPs);
     t4_err = (float)(resultsOfModelDecay.params['tau4'].stderr*userInput.__channelResolutionInPs);
 
-    I1 = (float)(resultsOfModelDecay.params['ampl1'].value/Isum);
-    I1_err = (float)(resultsOfModelDecay.params['ampl1'].stderr/Isum);
-
-    I2 = (float)(resultsOfModelDecay.params['ampl2'].value/Isum);
-    I2_err = (float)(resultsOfModelDecay.params['ampl2'].stderr/Isum);
-
-    I3 = (float)(resultsOfModelDecay.params['ampl3'].value/Isum);
-    I3_err = (float)(resultsOfModelDecay.params['ampl3'].stderr/Isum);
-
-    I4 = (float)(resultsOfModelDecay.params['ampl4'].value/Isum);
-    I4_err = (float)(resultsOfModelDecay.params['ampl4'].stderr/Isum);
-
     yRes = (float)(resultsOfModelDecay.params['y0'].value);
     yRes_err = (float)(resultsOfModelDecay.params['y0'].stderr);
+
+    amplitude1 = (float)(resultsOfModelDecay.params['ampl1'].value);
+    amplitude1_err = (float)(resultsOfModelDecay.params['ampl1'].stderr);
+    amplitude2 = (float)(resultsOfModelDecay.params['ampl2'].value);
+    amplitude2_err = (float)(resultsOfModelDecay.params['ampl2'].stderr);
+    amplitude3 = (float)(resultsOfModelDecay.params['ampl3'].value);
+    amplitude3_err = (float)(resultsOfModelDecay.params['ampl3'].stderr);
+    amplitude4 = (float)(resultsOfModelDecay.params['ampl4'].value);
+    amplitude4_err = (float)(resultsOfModelDecay.params['ampl4'].stderr);
+    
+    counts_1 = 0;
+    counts_2 = 0;
+    counts_3 = 0;
+    counts_4 = 0;
+    
+    counts_1_stddev = 0;
+    counts_2_stddev = 0;
+    counts_3_stddev = 0;
+    counts_4_stddev = 0;
+    
+    for i in range(0, len(xVal)):
+        counts_1 += amplitude1*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t1) + yRes;
+        counts_2 += amplitude2*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t2) + yRes;
+        counts_3 += amplitude3*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t3) + yRes;
+        counts_4 += amplitude4*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t4) + yRes;
+
+        counts_1_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t1)*(amplitude1_err**2 + (t1_err**2/t1**4)) + yRes_err**2
+        counts_2_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t2)*(amplitude2_err**2 + (t2_err**2/t2**4)) + yRes_err**2
+        counts_3_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t3)*(amplitude3_err**2 + (t3_err**2/t3**4)) + yRes_err**2
+        counts_4_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t4)*(amplitude4_err**2 + (t4_err**2/t4**4)) + yRes_err**2
+
+    counts_1_err = np.sqrt(counts_1_stddev)/np.sqrt(len(xVal));
+    counts_2_err = np.sqrt(counts_2_stddev)/np.sqrt(len(xVal));
+    counts_3_err = np.sqrt(counts_3_stddev)/np.sqrt(len(xVal));
+    counts_4_err = np.sqrt(counts_4_stddev)/np.sqrt(len(xVal));
+    
+    counts_sum = (counts_1 + counts_2 + counts_3 + counts_4);
+    counts_sum_err = np.sqrt(counts_1_err*counts_1_err + counts_2_err*counts_2_err + counts_3_err*counts_3_err + counts_4_err*counts_4_err);
+
+    I1 = (counts_1/counts_sum)
+    I1_err = np.sqrt((1/counts_sum)**2*counts_1_err**2 + counts_1**2*counts_sum_err**2/counts_sum**4); 
+
+    I2 = (counts_2/counts_sum)
+    I2_err = np.sqrt((1/counts_sum)**2*counts_2_err**2 + counts_2**2*counts_sum_err**2/counts_sum**4);
+
+    I3 = (counts_3/counts_sum)
+    I3_err = np.sqrt((1/counts_sum)**2*counts_3_err**2 + counts_3**2*counts_sum_err**2/counts_sum**4);
+
+    I4 = (counts_4/counts_sum)
+    I4_err = np.sqrt((1/counts_sum)**2*counts_4_err**2 + counts_4**2*counts_sum_err**2/counts_sum**4);
     
     
     print("Fit results: Reconvolution 2 components:");

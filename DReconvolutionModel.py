@@ -50,16 +50,16 @@ def Gaussian(x, ampl, sigma, y0, x0, args=()):
     h=N*np.exp(-0.5*((x-x0)/sigma)**2);
     return ampl*h+y0
 
-def Lorentz_Cauchy(x, ampl, a, wing, y0, x0, args=()):
+def Lorentz_Cauchy(x, ampl, s, y0, x0, args=()):
     h=np.zeros(x.size)
-    h=wing/(np.pi*((x-x0)*(x-x0) + wing*wing))
+    h=s/(np.pi*((x-x0)*(x-x0) + s*s))
     return ampl*h+y0
 
-def Pseudovoigt1(x, ampl, a, sigma, wing, y0, x0, args=()):
+def Pseudovoigt1(x, ampl, a, sigma, s, y0, x0, args=()):
     G=np.zeros(x.size)
     L=np.zeros(x.size)
     G=(1.0/(sigma*np.sqrt(2*np.pi)))*np.exp(-0.5*((x-x0)/sigma)*((x-x0)/sigma))
-    L=wing/(np.pi*((x-x0)*(x-x0) + wing*wing))
+    L=s/(np.pi*((x-x0)*(x-x0) + s*s))
     return ampl*(a*G+(1-a)*L)+y0
 
 def Pearson7(x, ampl, alpha, m, y0, x0, args=()):

@@ -59,8 +59,8 @@ __bUsingYVarAsWeighting = True
 #------------------
 __modelType = reconvModel.Gaussian
 ```
-2. run DReconvolutionProc.py
-3. finished!
+2. run <b>DReconvolutionProc.py</b>
+3. <b>finished!</b>
 
 Note: all parameter estimations required for the best model fit using the levenberg marquardt algorithm are done automatically. 
 

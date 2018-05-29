@@ -66,8 +66,12 @@ Note: all parameter estimations required for the best model fit using the levenb
 
 # How to cite this Software?
 
+You can cite all versions by using the <b>DOI 10.5281/zenodo.1255105</b>. This DOI represents all versions, and will always resolve to the latest one.<br>
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1255105.svg)](https://doi.org/10.5281/zenodo.1255105)
+
 ## v1.x
-DLTReconvolution v1.0:<br>
+DLTReconvolution v1.0:<br>[![DOI](https://zenodo.org/badge/135028235.svg)](https://zenodo.org/badge/latestdoi/135028235)<br>
 
 # Requirements
 - [LMFIT](https://lmfit.github.io/lmfit-py/model.html) 

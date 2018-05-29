@@ -58,8 +58,12 @@ def Lorentz_Cauchy(x, ampl, s, y0, x0, args=()):
 def Pseudovoigt1(x, ampl, a, sigma, s, y0, x0, args=()):
     G=np.zeros(x.size)
     L=np.zeros(x.size)
-    G=(1.0/(sigma*np.sqrt(2*np.pi)))*np.exp(-0.5*((x-x0)/sigma)*((x-x0)/sigma))
-    L=s/(np.pi*((x-x0)*(x-x0) + s*s))
+
+    #G=(2/sigma)*np.sqrt(np.log(2)/np.pi)*np.exp(-4*np.log(2)*((x-x0)/sigma)**2);
+    #L=(2/np.pi)*sigma*(1/(4*(x-x0)**2+sigma**2));
+    
+    G=(1.0/(sigma*np.sqrt(2*np.pi)))*np.exp(-0.5*((x-x0)/sigma)**2)
+    L=s/(np.pi*((x-x0)**2 + s*s))
     return ampl*(a*G+(1-a)*L)+y0
 
 def Pearson7(x, ampl, alpha, m, y0, x0, args=()):

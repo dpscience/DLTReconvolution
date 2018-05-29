@@ -33,6 +33,16 @@
 
 from DReconvolutionModel import ReconvolutionModel as reconvModel
 
+#save output as *.txt file after success?
+__saveReconvolutionSpectrum             = True
+__saveReconvolutionSpectrumPath         = 'testData/recovolutionSpectrumOutput.txt'
+__saveReconvolutionSpectrumResidualPath = 'testData/recovolutionSpectrumResidualsOutput.txt'
+
+#!note: IRF output is only saved if a model function is used --> __bUsingModel = True
+__saveReconvolutionIRF                  = True
+__saveReconvolutionIRFPath              = 'testData/recovolutionIRFOutput.txt'
+__saveReconvolutionIRFResidualPath      = 'testData/recovolutionIRFResidualsOutput.txt'
+
 #expected number of components (number of exponential decay functions - LIMITED to MAX: 4):
 __numberOfExpDec = 2
 
@@ -41,8 +51,8 @@ __channelResolutionInPs = 5.0
 
 #expected lifetimes (tau) -> start values in [ps] (required for the levenberg marquardt fit)
 #note: only the first '__numberOfExpDec' related values are considered (e.g.: for __numberOfExpDec = 2 --> __expectedTau_1_in_ps AND __expectedTau_2_in_ps)
-__expectedTau_1_in_ps = 160.0;
-__expectedTau_2_in_ps = 455.0;
+__expectedTau_1_in_ps = 260.0;
+__expectedTau_2_in_ps = 1500.0;
 __expectedTau_3_in_ps = 160.0;
 __expectedTau_4_in_ps = 160.0;
 
@@ -53,11 +63,11 @@ __bkgrd_count = 1500;
 #NOTE: Spectrum and IRF data vectors require equal length!!!
 
 #file path which contains the SPECTRUM data:
-__filePathSpec = 'testData/spectrum_5ps.dat'
+__filePathSpec = 'testData/spectrum2_5ps.dat'
 __specDataDelimiter = '\t'
 
 #file path which contains the IRF data:
-__filePathIRF = 'testData/irf_5ps.dat'
+__filePathIRF = 'testData/irf2_5ps.dat'
 __irfDataDelimiter = '\t'
 
 

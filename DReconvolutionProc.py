@@ -43,6 +43,8 @@ print("....started....");
 xSpec,ySpec = np.loadtxt(userInput.__filePathSpec, delimiter=userInput.__specDataDelimiter, unpack=True, dtype='float');
 xIRF,yIRF   = np.loadtxt(userInput.__filePathIRF, delimiter=userInput.__irfDataDelimiter, unpack=True, dtype='float');
 
+yIRFOrigin = yIRF;
+
 print("shifting x to x = 0...")
 
 #shift that: [0] = 0:
@@ -78,16 +80,19 @@ xWhereYMaxSpec = np.argmax(yMaxSpec);
 
 stddevIRF = 1.0
 
-for i in range(0, len(xVal)-1):
+for i in range(0, len(xVal)):
     if yIRF[i] > yMaxIRF*0.5:
         stddevIRF = np.abs((xWhereYMaxIRF-xIRF[i]))/(2*np.sqrt(2*np.log(2)));
         break;
 
-estimatedBkgrd = 0;
+estimatedBkgrd    = 0;
+estimatedBkgrdIRF = 0;
 for i in range(userInput.__bkgrd_startIndex, userInput.__bkgrd_startIndex + userInput.__bkgrd_count):
-    estimatedBkgrd += ySpec[i];
+    estimatedBkgrd    += ySpec[i];
+    estimatedBkgrdIRF += yIRF[i];
 
-estimatedBkgrd /= userInput.__bkgrd_count;
+estimatedBkgrd    /= userInput.__bkgrd_count;
+estimatedBkgrdIRF /= userInput.__bkgrd_count;
     
 #fit the IRF model function on data (xIRF, yIRF):
 if userInput.__bUsingModel:
@@ -99,7 +104,7 @@ if userInput.__bUsingModel:
         fitModelIRF.set_param_hint('ampl', min=0.0);
         fitModelIRF.set_param_hint('y0', min=0.0);
 
-        parameterListIRFFit = fitModelIRF.make_params(x=xVal, ampl=yMaxIRF, sigma=stddevIRF, y0=0, x0=xWhereYMaxIRF, args=yIRF);
+        parameterListIRFFit = fitModelIRF.make_params(x=xVal, ampl=yMaxIRF, sigma=stddevIRF, y0=estimatedBkgrdIRF, x0=xWhereYMaxIRF, args=yIRF);
         #change here if you want to fix x0 and/or y0:
         parameterListIRFFit['x0'].vary = True; 
         parameterListIRFFit['y0'].vary = True;
@@ -157,7 +162,7 @@ if userInput.__bUsingModel:
         fitModelIRF.set_param_hint('ampl', min=0.0);
         fitModelIRF.set_param_hint('y0', min=0.0);
         
-        parameterListIRFFit = fitModelIRF.make_params(x=xVal, ampl=yMaxIRF, s=stddevIRF, y0=0, x0=xWhereYMaxIRF, args=yIRF);
+        parameterListIRFFit = fitModelIRF.make_params(x=xVal, ampl=yMaxIRF, s=stddevIRF, y0=estimatedBkgrdIRF, x0=xWhereYMaxIRF, args=yIRF);
         #change here if you want to fix x0 and/or y0:
         parameterListIRFFit['x0'].vary = True; 
         parameterListIRFFit['y0'].vary = True;
@@ -216,7 +221,7 @@ if userInput.__bUsingModel:
         fitModelIRF.set_param_hint('ampl', min=0.0);
         fitModelIRF.set_param_hint('y0', min=0.0);
 
-        parameterListIRFFit = fitModelIRF.make_params(x=xVal, ampl=yMaxIRF, a=1, sigma=stddevIRF, s=stddevIRF, y0=0, x0=xWhereYMaxIRF, args=yIRF);
+        parameterListIRFFit = fitModelIRF.make_params(x=xVal, ampl=yMaxIRF, a=0.8, sigma=stddevIRF, s=stddevIRF*0.5, y0=estimatedBkgrdIRF, x0=xWhereYMaxIRF, args=yIRF); 
         #change here if you want to fix x0 and/or y0:
         parameterListIRFFit['x0'].vary = True; 
         parameterListIRFFit['y0'].vary = True;
@@ -227,8 +232,8 @@ if userInput.__bUsingModel:
         chiSquare = resultsOfModelIRF.chisqr;
         redChiSquare = resultsOfModelIRF.redchi;
 
-        fract = (float)(resultsOfModelIRF.params['a'].value*userInput);
-        fract_err = (float)(resultsOfModelIRF.params['a'].stderr*userInput);
+        fract = (float)(resultsOfModelIRF.params['a'].value);
+        fract_err = (float)(resultsOfModelIRF.params['a'].stderr);
         
         sigma = (float)(resultsOfModelIRF.params['sigma'].value*userInput.__channelResolutionInPs);
         sigma_err = (float)(resultsOfModelIRF.params['sigma'].stderr*userInput.__channelResolutionInPs);
@@ -251,13 +256,13 @@ if userInput.__bUsingModel:
         print("background  = {0} ({1})".format(yRes, yRes_err));
         print("");
         print("---------------------------------------------------------------");
-        print("G - Gaussian:  a        = {0} ({})".format(fract, fract_err));
+        print("G - Gaussian:  a        = {0} ({1})".format(fract, fract_err));
         print("---------------------------------------------------------------");
         print("stddev [ps] = {0} ({1})".format(sigma, sigma_err));
         print("FWHM   [ps] = {0} ({1})".format(sigma*(2*np.sqrt(2*np.log(2))), sigma_err*(2*np.sqrt(2*np.log(2)))));
         print("");
         print("---------------------------------------------------------------");
-        print("L - Lorentzian: (1 - a) = {0} ({})".format(1-fract, fract_err));
+        print("L - Lorentzian: (1 - a) = {0} ({1})".format(1-fract, fract_err));
         print("---------------------------------------------------------------");
         print("s [ps]      = {0} ({1})".format(s, s_err));
         print("---------------------------------------------------------------");
@@ -288,7 +293,7 @@ if userInput.__bUsingModel:
         fitModelIRF.set_param_hint('ampl', min=0.0);
         fitModelIRF.set_param_hint('y0', min=0.0);
 
-        parameterListIRFFit = fitModelIRF.make_params(x=xVal, ampl=yMaxIRF, alpha=stddevIRF, m=2, y0=0, x0=xWhereYMaxIRF, args=yIRF);
+        parameterListIRFFit = fitModelIRF.make_params(x=xVal, ampl=yMaxIRF, alpha=stddevIRF, m=2, y0=estimatedBkgrdIRF, x0=xWhereYMaxIRF, args=yIRF);
         #change here if you want to fix x0 and/or y0:
         parameterListIRFFit['x0'].vary = True; 
         parameterListIRFFit['y0'].vary = True;
@@ -302,8 +307,8 @@ if userInput.__bUsingModel:
         alpha = (float)(resultsOfModelIRF.params['alpha'].value*userInput.__channelResolutionInPs);
         alpha_err = (float)(resultsOfModelIRF.params['alpha'].stderr*userInput.__channelResolutionInPs);
         
-        m = (float)(resultsOfModelIRF.params['m'].value*userInput);
-        m_err = (float)(resultsOfModelIRF.params['m'].stderr*userInput);
+        m = (float)(resultsOfModelIRF.params['m'].value);
+        m_err = (float)(resultsOfModelIRF.params['m'].stderr);
         
         amplitude = (float)(resultsOfModelIRF.params['ampl'].value);
         amplitude_err = (float)(resultsOfModelIRF.params['ampl'].stderr);
@@ -483,7 +488,6 @@ if userInput.__numberOfExpDec == 1:
     ax2 = plt.subplot(2,1,2);
     ax2.set_title("Best fit: Residuals");
     plt.plot(xVal, resultsOfModelDecay.residual);
-    plt.show();
 
 if userInput.__numberOfExpDec == 2:
     print("\nrunning reconvolution with 2 component...\n")
@@ -568,7 +572,6 @@ if userInput.__numberOfExpDec == 2:
     ax2 = plt.subplot(2,1,2);
     ax2.set_title("Best fit: Residuals");
     plt.plot(xVal, resultsOfModelDecay.residual);
-    plt.show();
 
 if userInput.__numberOfExpDec == 3:
     print("\nrunning reconvolution with 3 component...\n")
@@ -667,7 +670,6 @@ if userInput.__numberOfExpDec == 3:
     ax2 = plt.subplot(2,1,2);
     ax2.set_title("Best fit: Residuals");
     plt.plot(xVal, resultsOfModelDecay.residual);
-    plt.show();
 
 if userInput.__numberOfExpDec == 4:
     print("\nrunning reconvolution with 4 component...\n")
@@ -787,5 +789,31 @@ if userInput.__numberOfExpDec == 4:
     ax2 = plt.subplot(2,1,2);
     ax2.set_title("Best fit: Residuals");
     plt.plot(xVal, resultsOfModelDecay.residual);
-    plt.show();
+
+#save data if required:
+if userInput.__saveReconvolutionSpectrum:
+    ab = np.zeros(len(xVal), dtype=[('time [ps]', float), ('raw counts [#]', float), ('best fit [#]', float)]);
+    ab['time [ps]']      = xVal*userInput.__channelResolutionInPs;
+    ab['raw counts [#]'] = ySpec;
+    ab['best fit [#]']   = resultsOfModelDecay.best_fit;
+    np.savetxt(userInput.__saveReconvolutionSpectrumPath, ab, fmt='%10.3f\t%10.3f\t%10.3f', delimiter='\t', newline='\n', header='time [ps]\traw counts [#]\tbest fit [#]\n');
+
+    abRes = np.zeros(len(xVal), dtype=[('time [ps]', float), ('residuals [conv. level]', float)]);
+    abRes['time [ps]']               = xVal*userInput.__channelResolutionInPs;
+    abRes['residuals [conv. level]'] = resultsOfModelDecay.residual;
+    np.savetxt(userInput.__saveReconvolutionSpectrumResidualPath, abRes, fmt='%10.3f\t%10.3f', delimiter='\t', newline='\n', header='time [ps]\traw counts [#]\tresiduals [conv. level]\n');
+
+if userInput.__saveReconvolutionIRF and userInput.__bUsingModel:
+    ab = np.zeros(len(xVal), dtype=[('time [ps]', float), ('raw counts [#]', float), ('best fit [#]', float)]);
+    ab['time [ps]']      = xVal*userInput.__channelResolutionInPs;
+    ab['raw counts [#]'] = yIRFOrigin;
+    ab['best fit [#]']   = yIRF;
+    np.savetxt(userInput.__saveReconvolutionIRFPath, ab, fmt='%10.3f\t%10.3f\t%10.3f', delimiter='\t', newline='\n', header='time [ps]\traw counts [#]\tbest fit [#]\n');
+
+    abRes = np.zeros(len(xVal), dtype=[('time [ps]', float), ('residuals [conv. level]', float)]);
+    abRes['time [ps]']               = xVal*userInput.__channelResolutionInPs;
+    abRes['residuals [conv. level]'] = resultsOfModelIRF.residual;
+    np.savetxt(userInput.__saveReconvolutionIRFResidualPath, abRes, fmt='%10.3f\t%10.3f', delimiter='\t', newline='\n', header='time [ps]\traw counts [#]\tresiduals [conv. level]\n');
+
+plt.show();
     

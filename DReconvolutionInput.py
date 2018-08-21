@@ -34,54 +34,64 @@
 from DReconvolutionModel import ReconvolutionModel as reconvModel
 
 #save output as *.txt file after success?
-__saveReconvolutionSpectrum             = True
+__saveReconvolutionSpectrum             = False
 __saveReconvolutionSpectrumPath         = 'testData/recovolutionSpectrumOutput.txt'
 __saveReconvolutionSpectrumResidualPath = 'testData/recovolutionSpectrumResidualsOutput.txt'
 
-#!note: IRF output is only saved if a model function is used --> __bUsingModel = True
-__saveReconvolutionIRF                  = True
+#!note: IRF output is only saved if the model function is used, meaning--> (__bUsingModel = True)
+__saveReconvolutionIRF                  = False
 __saveReconvolutionIRFPath              = 'testData/recovolutionIRFOutput.txt'
 __saveReconvolutionIRFResidualPath      = 'testData/recovolutionIRFResidualsOutput.txt'
 
-#expected number of components (number of exponential decay functions - LIMITED to MAX: 4):
-__numberOfExpDec = 2
 
 #channel/bin resolution [ps]
 __channelResolutionInPs = 5.0
 
-#expected lifetimes (tau) -> start values in [ps] (required for the levenberg marquardt fit)
+#binning factor:
+__binningFactor = 1;
+
+#expected number of components (number of exponential decay functions - LIMITED to MAX: 4):
+__numberOfExpDec = 2
+
+#expected lifetimes (tau) -> start values in [ps] (required for the levenberg marquardt fit using lmfit library)
 #note: only the first '__numberOfExpDec' related values are considered (e.g.: for __numberOfExpDec = 2 --> __expectedTau_1_in_ps AND __expectedTau_2_in_ps)
-__expectedTau_1_in_ps = 260.0;
-__expectedTau_2_in_ps = 1500.0;
-__expectedTau_3_in_ps = 160.0;
+__expectedTau_1_in_ps = 240.0;
+__expectedTau_2_in_ps = 1200.0;
+__expectedTau_3_in_ps = 2800.0;
 __expectedTau_4_in_ps = 160.0;
 
-#background calculation (right side of spectrum data):
+#background estimation (right side of spectrum data):
 __bkgrd_startIndex = 8000;
-__bkgrd_count = 1500;
+__bkgrd_count = 999;
+
+#fixed background? (value of estimated background is used)
+__bkgrdFixed = False;
+
 
 #NOTE: Spectrum and IRF data vectors require equal length!!!
 
 #file path which contains the SPECTRUM data:
-__filePathSpec = 'testData/spectrum2_5ps.dat'
+__filePathSpec = 'testData/spectrum_5ps.dat'
 __specDataDelimiter = '\t'
 
 #file path which contains the IRF data:
-__filePathIRF = 'testData/irf2_5ps.dat'
+__filePathIRF = 'testData/irf_5ps.dat'
 __irfDataDelimiter = '\t'
 
+#define the number of rows which should be skipped during the import:
+__skipRows = 0;
 
 #using model function for IRF?
-__bUsingModel = True
+__bUsingModel = False
 
-#fit weighting: y variance? w = 1/sqrt(y)
+#fit weighting: y variance? w = 1/sqrt(y) <--- <poisson noise> otherwise the weighting is equally distributed: w = 1
 __bUsingYVarAsWeighting = True
 
-#if using model function? choose type of model (also defined in DReconvolutionModel.py):
+#if using model function? choose type of model (defined in DReconvolutionModel.py):
 #------------------
 #Gaussian       = 1
 #Lorentz_Cauchy = 2
 #Pseudovoigt1   = 3
 #Pearson7       = 4
 #------------------
-__modelType = reconvModel.Gaussian
+__modelType = reconvModel.Pearson7

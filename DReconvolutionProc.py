@@ -36,16 +36,18 @@ import DReconvolutionInput as userInput
 
 from lmfit import Model
 import numpy as np
+import scipy.signal as signal
+from skimage import color, data, restoration
 import matplotlib.pyplot as plt
 
-print("....started....");
+print("....DLTReconvolution script started....");
 
-xSpec,ySpec = np.loadtxt(userInput.__filePathSpec, delimiter=userInput.__specDataDelimiter, unpack=True, dtype='float');
-xIRF,yIRF   = np.loadtxt(userInput.__filePathIRF, delimiter=userInput.__irfDataDelimiter, unpack=True, dtype='float');
+xSpec,ySpec = np.loadtxt(userInput.__filePathSpec, delimiter=userInput.__specDataDelimiter, skiprows=userInput.__skipRows, unpack=True, dtype='float');
+xIRF,yIRF   = np.loadtxt(userInput.__filePathIRF, delimiter=userInput.__irfDataDelimiter, skiprows=userInput.__skipRows, unpack=True, dtype='float');
 
 yIRFOrigin = yIRF;
 
-print("shifting x to x = 0...")
+print("shifting x that x = 0...")
 
 #shift that: [0] = 0:
 xSpec -= xSpec[0];
@@ -55,9 +57,42 @@ if (len(xSpec) != len(xIRF) or len(ySpec) != len(yIRF)):
     print("Error: the data vectors (x,y) of IRF and SPECTRUM require the same length.");
     quit(); #kill the process on error.
 
-#merge into one vector (xVal) for x values:
+#merge into one vector (xVal) for x values (Fourier transforms are 1D):
 xVal = np.zeros(xSpec.size);
 xVal = xSpec;
+
+#re-bin data if required: 
+if userInput.__binningFactor > 1:
+    print("re-binning data by factor: {0} ...".format(userInput.__binningFactor))
+    
+    newLength = 1+((int)(len(xVal)/userInput.__binningFactor));
+    
+    xValRebinned = np.zeros(newLength);
+
+    rebin = 0;
+    ySpecRebinned = np.zeros(newLength);
+    yIRFRebinned = np.zeros(newLength);
+
+    for i in range(0, len(xVal)):
+        xValRebinned[rebin] = rebin;
+        ySpecRebinned[rebin] += ySpec[i]
+        yIRFRebinned[rebin] += yIRF[i]
+
+        if (((i+1)%userInput.__binningFactor) == 1):
+            rebin += 1;
+
+    xVal = np.zeros(newLength);
+    yIRF = np.zeros(newLength);
+    ySpec = np.zeros(newLength);
+    
+    xVal = xValRebinned;
+    yIRF = yIRFRebinned;
+    ySpec = ySpecRebinned;
+
+    userInput.__channelResolutionInPs *= userInput.__binningFactor;
+
+    userInput.__bkgrd_startIndex /= userInput.__binningFactor;
+    userInput.__bkgrd_count /= userInput.__binningFactor;
 
 #calculate the vector which contains the fit weightings:
 fitWeightingIRF  = 1.0;
@@ -69,9 +104,9 @@ if userInput.__bUsingYVarAsWeighting:
     fitWeightingIRF  = 1.0/np.sqrt(yIRF+1);  #prevent zero devision
     fitWeightingSpec = 1.0/np.sqrt(ySpec+1); #prevent zero devision
 
-print("estimate start values...")
+print("estimate start values for least-square fitting...")
 
-#estimate IRF start values (amplitude, xOffset/mean, stddev):
+#estimate IRF start values (amplitude, xOffset/mean, stddev) <<---- based on Gaussian and should work as start values for symmetric distribution functions:
 yMaxIRF  = np.amax(yIRF);
 yMaxSpec = np.amax(ySpec);
  
@@ -80,20 +115,27 @@ xWhereYMaxSpec = np.argmax(yMaxSpec);
 
 stddevIRF = 1.0
 
+invStddevToFWHMFac = 1.0/(2*np.sqrt(2*np.log(2)));
+
 for i in range(0, len(xVal)):
     if yIRF[i] > yMaxIRF*0.5:
-        stddevIRF = np.abs((xWhereYMaxIRF-xIRF[i]))/(2*np.sqrt(2*np.log(2)));
+        stddevIRF = np.abs((xWhereYMaxIRF-xIRF[i]))*invStddevToFWHMFac;
         break;
 
 estimatedBkgrd    = 0;
 estimatedBkgrdIRF = 0;
-for i in range(userInput.__bkgrd_startIndex, userInput.__bkgrd_startIndex + userInput.__bkgrd_count):
+    
+for i in range((int)(userInput.__bkgrd_startIndex), (int)(userInput.__bkgrd_startIndex + userInput.__bkgrd_count)):
     estimatedBkgrd    += ySpec[i];
     estimatedBkgrdIRF += yIRF[i];
-
+    
 estimatedBkgrd    /= userInput.__bkgrd_count;
 estimatedBkgrdIRF /= userInput.__bkgrd_count;
-    
+
+#substract background from SPECTRUM and IRF - not used yet -:
+ySpecMinusBkgrd = ((ySpec-estimatedBkgrd)+abs(ySpec-estimatedBkgrd))/2;
+yIRFMinusBkgrd = ((yIRF-estimatedBkgrdIRF)+abs(yIRF-estimatedBkgrdIRF))/2;
+
 #fit the IRF model function on data (xIRF, yIRF):
 if userInput.__bUsingModel:
     print("IRF: running model fit...")
@@ -183,8 +225,8 @@ if userInput.__bUsingModel:
         yRes_err = (float)(resultsOfModelIRF.params['y0'].stderr);
 
 
-        print("\nFit results: IRF - Model Function (Type: Lorentz/Cauchy):");
-        print("-----------------------------------------------------------");
+        print("\nFit results: IRF - Model Function (Type: Lorentzian/Cauchy):");
+        print("--------------------------------------------------------------");
         print("X²          = {0}".format(redChiSquare));
         print("");
         print("s [ps]      = {0} ({1})".format(s, s_err));
@@ -192,12 +234,12 @@ if userInput.__bUsingModel:
         print("amplitude   = {0} ({1})".format(amplitude, amplitude_err));
         print("");
         print("background  = {0} ({1})".format(yRes, yRes_err));
-        print("-----------------------------------------------------------");
+        print("--------------------------------------------------------------");
 
         
         plt.figure(1);
         ax = plt.subplot(2,1,1);
-        ax.set_title("Best fit: IRF Lorentz/Cauchy model fit");
+        ax.set_title("Best fit: IRF Lorentzian/Cauchy model fit");
         plt.semilogy(xVal, yIRF,'o', xVal , resultsOfModelIRF.best_fit, 'b');
         ax2 = plt.subplot(2,1,2);
         ax2.set_title("Best fit: residuals");
@@ -293,6 +335,7 @@ if userInput.__bUsingModel:
         fitModelIRF.set_param_hint('ampl', min=0.0);
         fitModelIRF.set_param_hint('y0', min=0.0);
 
+        
         parameterListIRFFit = fitModelIRF.make_params(x=xVal, ampl=yMaxIRF, alpha=stddevIRF, m=2, y0=estimatedBkgrdIRF, x0=xWhereYMaxIRF, args=yIRF);
         #change here if you want to fix x0 and/or y0:
         parameterListIRFFit['x0'].vary = True; 
@@ -403,7 +446,7 @@ def ExpDecay_3(x, ampl1, tau1, ampl2, tau2, ampl3, tau3, y0, x0, args=(yIRF)):
     irf_shifted = (shift_Incr1 + shift_Incr2)
     irf_norm = irf_shifted/sum(irf_shifted)
     
-    h = ampl1*np.exp(-(x)/tau1) + ampl2*np.exp(-(x)/tau2) + ampl3*np.exp(-(x)/tau3)
+    h = ampl1*np.exp(-(x)/tau1) + ampl2*np.exp(-(x)/tau2) + ampl3*np.exp(-(x)/tau3) 
     hConvIrf_norm = convolveData(h, irf_norm)
     return hConvIrf_norm + y0
 
@@ -437,7 +480,7 @@ if userInput.__numberOfExpDec == 1:
     parameterListDecayFit = fitModelDecay.make_params(x=xVal, ampl1=yMaxSpec, tau1=(userInput.__expectedTau_1_in_ps/userInput.__channelResolutionInPs), y0=estimatedBkgrd, x0=xWhereYMaxSpec, args=ySpec);
     #change here if you want to fix x0 and/or y0:
     parameterListDecayFit['x0'].vary = True; 
-    parameterListDecayFit['y0'].vary = True;
+    parameterListDecayFit['y0'].vary = not userInput.__bkgrdFixed;
 
     #calculate results:
     chiSquare = resultsOfModelDecay.chisqr;
@@ -457,7 +500,7 @@ if userInput.__numberOfExpDec == 1:
     counts_1_stddev = 0;
     
     for i in range(0, len(xVal)):
-        counts_1 += amplitude1*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t1) + yRes;
+        counts_1 += amplitude1*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t1) 
         
         counts_1_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t1)*(amplitude1_err**2 + (t1_err**2/t1**4)) + yRes_err**2
         
@@ -471,14 +514,14 @@ if userInput.__numberOfExpDec == 1:
 
 
     print("Fit results: Reconvolution 1 component:");
-    print("---------------------------------------");
+    print("----------------------------------------");
     print("X²         = {0}".format(redChiSquare));
     print("");
     print("tau (1)    = {0} ({1})".format(t1, t1_err));
     print("I   (1)    = {0} ({1})".format(I1, I1_err));
     print("");
     print("background = {0} ({1})".format(yRes, yRes_err));
-    print("---------------------------------------");
+    print("----------------------------------------");
 
     print("\nplotting results...")
     plt.figure(3)
@@ -490,7 +533,7 @@ if userInput.__numberOfExpDec == 1:
     plt.plot(xVal, resultsOfModelDecay.residual);
 
 if userInput.__numberOfExpDec == 2:
-    print("\nrunning reconvolution with 2 component...\n")
+    print("\nrunning reconvolution with 2 components...\n")
     fitModelDecay = Model(ExpDecay_2);
     fitModelDecay.set_param_hint('ampl1', min=0.0);
     fitModelDecay.set_param_hint('tau1', min=0.00001);
@@ -501,7 +544,7 @@ if userInput.__numberOfExpDec == 2:
     parameterListDecayFit = fitModelDecay.make_params(x=xVal, ampl1=yMaxSpec, tau1=(userInput.__expectedTau_1_in_ps/userInput.__channelResolutionInPs), ampl2=yMaxSpec, tau2=(userInput.__expectedTau_2_in_ps/userInput.__channelResolutionInPs), y0=estimatedBkgrd, x0=xWhereYMaxSpec, args=ySpec);
     #change here if you want to fix x0 and/or y0:
     parameterListDecayFit['x0'].vary = True; 
-    parameterListDecayFit['y0'].vary = True;
+    parameterListDecayFit['y0'].vary = not userInput.__bkgrdFixed;
     
     #run the fit:
     resultsOfModelDecay = fitModelDecay.fit(ySpec, params=parameterListDecayFit, weights=fitWeightingSpec, method='leastsq', x=xVal);
@@ -531,8 +574,8 @@ if userInput.__numberOfExpDec == 2:
     counts_2_stddev = 0;
     
     for i in range(0, len(xVal)):
-        counts_1 += amplitude1*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t1) + yRes;
-        counts_2 += amplitude2*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t2) + yRes;
+        counts_1 += amplitude1*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t1) 
+        counts_2 += amplitude2*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t2) 
 
         counts_1_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t1)*(amplitude1_err**2 + (t1_err**2/t1**4)) + yRes_err**2
         counts_2_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t2)*(amplitude2_err**2 + (t2_err**2/t2**4)) + yRes_err**2
@@ -574,8 +617,8 @@ if userInput.__numberOfExpDec == 2:
     plt.plot(xVal, resultsOfModelDecay.residual);
 
 if userInput.__numberOfExpDec == 3:
-    print("\nrunning reconvolution with 3 component...\n")
-    fitModelDecay = Model(ExpDecay_3);
+    print("\nrunning reconvolution with 3 components...\n")
+    fitModelDecay = Model(deconv_ExpDecay_3);
     fitModelDecay.set_param_hint('ampl1', min=0.0);
     fitModelDecay.set_param_hint('tau1', min=0.00001);
     fitModelDecay.set_param_hint('ampl2', min=0.0);
@@ -587,7 +630,10 @@ if userInput.__numberOfExpDec == 3:
     parameterListDecayFit = fitModelDecay.make_params(x=xVal, ampl1=yMaxSpec, tau1=(userInput.__expectedTau_1_in_ps/userInput.__channelResolutionInPs), ampl2=yMaxSpec, tau2=(userInput.__expectedTau_2_in_ps/userInput.__channelResolutionInPs), ampl3=yMaxSpec, tau3=(userInput.__expectedTau_3_in_ps/userInput.__channelResolutionInPs), y0=estimatedBkgrd, x0=xWhereYMaxSpec, args=ySpec);
     #change here if you want to fix x0 and/or y0:
     parameterListDecayFit['x0'].vary = True; 
-    parameterListDecayFit['y0'].vary = True;
+    parameterListDecayFit['y0'].vary = not userInput.__bkgrdFixed;
+
+    #run the fit:
+    resultsOfModelDecay = fitModelDecay.fit(ySpec, params=parameterListDecayFit, weights=fitWeightingSpec, method='leastsq', x=xVal);
 
     #calculate results:
     chiSquare = resultsOfModelDecay.chisqr;
@@ -621,9 +667,9 @@ if userInput.__numberOfExpDec == 3:
     counts_3_stddev = 0;
     
     for i in range(0, len(xVal)):
-        counts_1 += amplitude1*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t1) + yRes;
-        counts_2 += amplitude2*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t2) + yRes;
-        counts_3 += amplitude3*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t3) + yRes;
+        counts_1 += amplitude1*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t1) 
+        counts_2 += amplitude2*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t2) 
+        counts_3 += amplitude3*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t3) 
 
         counts_1_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t1)*(amplitude1_err**2 + (t1_err**2/t1**4)) + yRes_err**2
         counts_2_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t2)*(amplitude2_err**2 + (t2_err**2/t2**4)) + yRes_err**2
@@ -646,7 +692,7 @@ if userInput.__numberOfExpDec == 3:
     I3_err = np.sqrt((1/counts_sum)**2*counts_3_err**2 + counts_3**2*counts_sum_err**2/counts_sum**4);
     
     
-    print("Fit results: Reconvolution 2 components:");
+    print("Fit results: Reconvolution 3 components:");
     print("----------------------------------------");
     print("X²         = {0}".format(redChiSquare));
     print("");
@@ -672,7 +718,7 @@ if userInput.__numberOfExpDec == 3:
     plt.plot(xVal, resultsOfModelDecay.residual);
 
 if userInput.__numberOfExpDec == 4:
-    print("\nrunning reconvolution with 4 component...\n")
+    print("\nrunning reconvolution with 4 components...\n")
     fitModelDecay = Model(ExpDecay_4);
     fitModelDecay.set_param_hint('ampl1', min=0.0);
     fitModelDecay.set_param_hint('tau1', min=0.00001);
@@ -687,7 +733,7 @@ if userInput.__numberOfExpDec == 4:
     parameterListDecayFit = fitModelDecay.make_params(x=xVal, ampl1=yMaxSpec, tau1=(userInput.__expectedTau_1_in_ps/userInput.__channelResolutionInPs), ampl2=yMaxSpec, tau2=(userInput.__expectedTau_2_in_ps/userInput.__channelResolutionInPs), ampl3=yMaxSpec, tau3=(userInput.__expectedTau_3_in_ps/userInput.__channelResolutionInPs), ampl4=yMaxSpec, tau4=(userInput.__expectedTau_4_in_ps/userInput.__channelResolutionInPs), y0=estimatedBkgrd, x0=xWhereYMaxSpec, args=ySpec);
     #change here if you want to fix x0 and/or y0:
     parameterListDecayFit['x0'].vary = True; 
-    parameterListDecayFit['y0'].vary = True;
+    parameterListDecayFit['y0'].vary = not userInput.__bkgrdFixed;
 
     #run the fit:
     resultsOfModelDecay = fitModelDecay.fit(ySpec, params=parameterListDecayFit, weights=fitWeightingSpec, method='leastsq', x=xVal);
@@ -731,10 +777,10 @@ if userInput.__numberOfExpDec == 4:
     counts_4_stddev = 0;
     
     for i in range(0, len(xVal)):
-        counts_1 += amplitude1*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t1) + yRes;
-        counts_2 += amplitude2*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t2) + yRes;
-        counts_3 += amplitude3*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t3) + yRes;
-        counts_4 += amplitude4*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t4) + yRes;
+        counts_1 += amplitude1*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t1);
+        counts_2 += amplitude2*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t2);
+        counts_3 += amplitude3*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t3);
+        counts_4 += amplitude4*np.exp(-(xVal[i]*userInput.__channelResolutionInPs)/t4);
 
         counts_1_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t1)*(amplitude1_err**2 + (t1_err**2/t1**4)) + yRes_err**2
         counts_2_stddev += np.exp(-2*xVal[i]*userInput.__channelResolutionInPs/t2)*(amplitude2_err**2 + (t2_err**2/t2**4)) + yRes_err**2
@@ -762,7 +808,7 @@ if userInput.__numberOfExpDec == 4:
     I4_err = np.sqrt((1/counts_sum)**2*counts_4_err**2 + counts_4**2*counts_sum_err**2/counts_sum**4);
     
     
-    print("Fit results: Reconvolution 2 components:");
+    print("Fit results: Reconvolution 4 components:");
     print("----------------------------------------");
     print("X²         = {0}".format(redChiSquare));
     print("");
@@ -784,7 +830,7 @@ if userInput.__numberOfExpDec == 4:
     print("\nplotting results...")
     plt.figure(3)
     ax = plt.subplot(2,1,1);
-    ax.set_title("Best fit: Reconvolution with 2 lifetime components");
+    ax.set_title("Best fit: Reconvolution with 4 lifetime components");
     plt.semilogy(xVal, ySpec,'o', xVal ,resultsOfModelDecay.best_fit, 'b');
     ax2 = plt.subplot(2,1,2);
     ax2.set_title("Best fit: Residuals");

@@ -1,6 +1,6 @@
 # DLTReconvolution
 Copyright (c) 2016-2018 Danny Petschke (danny.petschke@uni-wuerzburg.de). All rights reserved.<br><br>
-DLTReconvolution - A Python based Software for the Analysis of Lifetime Spectra using the numerical Reconvolution Algorithm
+DLTReconvolution - A Python based Software for the Analysis of Lifetime Spectra using the iterative least-square Reconvolution Method
 
 # Short Introduction
 

@@ -92,7 +92,7 @@ You can cite all versions by using the <b>DOI 10.5281/zenodo.1255105</b>. This D
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1255105.svg)](https://doi.org/10.5281/zenodo.1255105)
 
 ## v1.x
-DLTReconvolution v1.0:<br>[![DOI](https://zenodo.org/badge/135028235.svg)](https://zenodo.org/badge/latestdoi/135028235)<br>
+DLTReconvolution v1.0:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1255106.svg)](https://doi.org/10.5281/zenodo.1255106)<br>
 DLTReconvolution v1.1:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1414107.svg)](https://doi.org/10.5281/zenodo.1414107)<br>
 
 # Requirements

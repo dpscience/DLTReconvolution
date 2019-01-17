@@ -92,7 +92,8 @@ You can cite all versions by using the <b>DOI 10.5281/zenodo.1255105</b>. This D
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1255105.svg)](https://doi.org/10.5281/zenodo.1255105)
 
 ## v1.x
-DLTReconvolution v1.0:<br>[![DOI](https://zenodo.org/badge/135028235.svg)](https://zenodo.org/badge/latestdoi/135028235)<br>
+DLTReconvolution v1.0:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1255106.svg)](https://doi.org/10.5281/zenodo.1255106)<br>
+DLTReconvolution v1.1:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1414107.svg)](https://doi.org/10.5281/zenodo.1414107)<br>
 
 # Requirements
 - [LMFIT](https://lmfit.github.io/lmfit-py/model.html) 
@@ -102,6 +103,8 @@ DLTReconvolution v1.0:<br>[![DOI](https://zenodo.org/badge/135028235.svg)](https
 #### [WinPython](https://sourceforge.net/projects/winpython/) meets all requirements. 
 
 # License (BSD-3-Clause)
+
+Copyright (c) 2016-2018 Danny Petschke (danny.petschke@uni-wuerzburg.de). All rights reserved.<br><br>
 
 Redistribution and use in source and binary forms, with or without modification,<br> 
 are permitted provided that the following conditions are met:<br><br>

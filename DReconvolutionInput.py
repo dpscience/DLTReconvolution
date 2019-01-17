@@ -1,6 +1,9 @@
 #*************************************************************************************************
 #**
-#** Copyright (c) 2017, 2018 Danny Petschke. All rights reserved.
+#** DLTReconvolution v1.2 (17.01.2019)
+#**
+#**
+#** Copyright (c) 2017 - 2019 Danny Petschke. All rights reserved.
 #** 
 #** Redistribution and use in source and binary forms, with or without modification, 
 #** are permitted provided that the following conditions are met:
@@ -35,13 +38,14 @@ from DReconvolutionModel import ReconvolutionModel as reconvModel
 
 #save output as *.txt file after success?
 __saveReconvolutionSpectrum             = False
-__saveReconvolutionSpectrumPath         = 'testData/recovolutionSpectrumOutput.txt'
-__saveReconvolutionSpectrumResidualPath = 'testData/recovolutionSpectrumResidualsOutput.txt'
+__saveReconvolutionSpectrumPath         = 'output/...*txt'
+__saveReconvolutionSpectrumResidualPath = 'output/...*txt'
 
 #!note: IRF output is only saved if the model function is used, meaning--> (__bUsingModel = True)
 __saveReconvolutionIRF                  = False
-__saveReconvolutionIRFPath              = 'testData/recovolutionIRFOutput.txt'
-__saveReconvolutionIRFResidualPath      = 'testData/recovolutionIRFResidualsOutput.txt'
+__saveReconvolutionIRFPath              = 'output/...*txt'
+__saveReconvolutionIRFResidualPath      = 'output/...*txt'
+
 
 
 #channel/bin resolution [ps]
@@ -51,13 +55,13 @@ __channelResolutionInPs = 5.0
 __binningFactor = 1;
 
 #expected number of components (number of exponential decay functions - LIMITED to MAX: 4):
-__numberOfExpDec = 2
+__numberOfExpDec = 3
 
 #expected lifetimes (tau) -> start values in [ps] (required for the levenberg marquardt fit using lmfit library)
 #note: only the first '__numberOfExpDec' related values are considered (e.g.: for __numberOfExpDec = 2 --> __expectedTau_1_in_ps AND __expectedTau_2_in_ps)
-__expectedTau_1_in_ps = 240.0;
-__expectedTau_2_in_ps = 1200.0;
-__expectedTau_3_in_ps = 2800.0;
+__expectedTau_1_in_ps = 190.0;
+__expectedTau_2_in_ps = 385.0;
+__expectedTau_3_in_ps = 1200.0;
 __expectedTau_4_in_ps = 160.0;
 
 #background estimation (right side of spectrum data):
@@ -68,18 +72,29 @@ __bkgrd_count = 999;
 __bkgrdFixed = False;
 
 
-#NOTE: Spectrum and IRF data vectors require equal length!!!
+#NOTE: Spectrum and IRF (or mono-exponential decay spectrum) data vectors require equal length!!!
+
+#define the number of rows which should be skipped during the import:
+__skipRows = 5;
 
 #file path which contains the SPECTRUM data:
-__filePathSpec = 'testData/spectrum_5ps.dat'
+__filePathSpec = 'testData/bi207_ref/sn_5ps.dat'
 __specDataDelimiter = '\t'
 
 #file path which contains the IRF data:
-__filePathIRF = 'testData/irf_5ps.dat'
+__filePathIRF = 'path to irf data'
 __irfDataDelimiter = '\t'
 
-#define the number of rows which should be skipped during the import:
-__skipRows = 0;
+
+#set TRUE if the irf is retrieved from a mono-exponential decay spectrum such as well annealed metals or 207-Bi (in this case, the IRF data will be ignored):
+__bUsingMonoDecaySpecForIRF = True
+
+__tau_monoDecaySpec_in_ps = 182.0 #[ps] 207-Bi
+
+__filePathMonoDecaySpec = 'testData/bi207_ref/bi207_5ps.dat'
+__monoDecaySpecDataDelimiter = '\t'
+
+
 
 #using model function for IRF?
 __bUsingModel = False

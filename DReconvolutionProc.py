@@ -1,6 +1,9 @@
 #*************************************************************************************************
 #**
-#** Copyright (c) 2017, 2018 Danny Petschke. All rights reserved.
+#** DLTReconvolution v1.2 (17.01.2019)
+#**
+#**
+#** Copyright (c) 2017 - 2019 Danny Petschke. All rights reserved.
 #** 
 #** Redistribution and use in source and binary forms, with or without modification, 
 #** are permitted provided that the following conditions are met:
@@ -43,7 +46,22 @@ import matplotlib.pyplot as plt
 print("....DLTReconvolution script started....");
 
 xSpec,ySpec = np.loadtxt(userInput.__filePathSpec, delimiter=userInput.__specDataDelimiter, skiprows=userInput.__skipRows, unpack=True, dtype='float');
-xIRF,yIRF   = np.loadtxt(userInput.__filePathIRF, delimiter=userInput.__irfDataDelimiter, skiprows=userInput.__skipRows, unpack=True, dtype='float');
+
+if not userInput.__bUsingMonoDecaySpecForIRF:
+    xIRF,yIRF   = np.loadtxt(userInput.__filePathIRF, delimiter=userInput.__irfDataDelimiter, skiprows=userInput.__skipRows, unpack=True, dtype='float');
+else:
+    xIRF,yMonoDecaySpec = np.loadtxt(userInput.__filePathMonoDecaySpec, delimiter=userInput.__monoDecaySpecDataDelimiter, skiprows=userInput.__skipRows, unpack=True, dtype='float');
+
+    if userInput.__tau_monoDecaySpec_in_ps <= 0:
+        print("Input error: negative lifetime for mono-decay spectrum.");
+        quit(); #kill the process on error.
+
+    yIRF = np.zeros(xSpec.size);
+
+    for i in range(1, len(xIRF)-1):
+        yIRF[i] = yMonoDecaySpec[i] + (userInput.__tau_monoDecaySpec_in_ps/(2*userInput.__channelResolutionInPs))*(yMonoDecaySpec[i+1] - yMonoDecaySpec[i-1])
+
+    
 
 yIRFOrigin = yIRF;
 
@@ -618,7 +636,7 @@ if userInput.__numberOfExpDec == 2:
 
 if userInput.__numberOfExpDec == 3:
     print("\nrunning reconvolution with 3 components...\n")
-    fitModelDecay = Model(deconv_ExpDecay_3);
+    fitModelDecay = Model(ExpDecay_3);
     fitModelDecay.set_param_hint('ampl1', min=0.0);
     fitModelDecay.set_param_hint('tau1', min=0.00001);
     fitModelDecay.set_param_hint('ampl2', min=0.0);

@@ -1,6 +1,6 @@
 #*************************************************************************************************
 #**
-#** DLTReconvolution v1.2 (17.01.2019)
+#** DLTReconvolution v1.2 (21.09.2019)
 #**
 #**
 #** Copyright (c) 2017 - 2019 Danny Petschke. All rights reserved.
@@ -36,71 +36,18 @@
 
 from DReconvolutionModel import ReconvolutionModel as reconvModel
 
-#save output as *.txt file after success?
-__saveReconvolutionSpectrum             = False
-__saveReconvolutionSpectrumPath         = 'output/...*txt'
-__saveReconvolutionSpectrumResidualPath = 'output/...*txt'
+#NOTE: spectrum and IRF (or mono-exponential decay spectrum) data vectors require equal length!
 
-#!note: IRF output is only saved if the model function is used, meaning--> (__bUsingModel = True)
-__saveReconvolutionIRF                  = False
-__saveReconvolutionIRFPath              = 'output/...*txt'
-__saveReconvolutionIRFResidualPath      = 'output/...*txt'
+#file path (and name) to the SPECTRUM data:
+__filePathSpec          = 'testData/spectrum_5ps.dat'
+__specDataDelimiter     = '\t'
 
+#file path (and name) to the IRF data:
+__filePathIRF           = 'testData/irf_5ps.dat'
+__irfDataDelimiter      = '\t'
 
-
-#channel/bin resolution [ps]
-__channelResolutionInPs = 5.0
-
-#binning factor:
-__binningFactor = 1;
-
-#expected number of components (number of exponential decay functions - LIMITED to MAX: 4):
-__numberOfExpDec = 3
-
-#expected lifetimes (tau) -> start values in [ps] (required for the levenberg marquardt fit using lmfit library)
-#note: only the first '__numberOfExpDec' related values are considered (e.g.: for __numberOfExpDec = 2 --> __expectedTau_1_in_ps AND __expectedTau_2_in_ps)
-__expectedTau_1_in_ps = 190.0;
-__expectedTau_2_in_ps = 385.0;
-__expectedTau_3_in_ps = 1200.0;
-__expectedTau_4_in_ps = 160.0;
-
-#background estimation (right side of spectrum data):
-__bkgrd_startIndex = 8000;
-__bkgrd_count = 999;
-
-#fixed background? (value of estimated background is used)
-__bkgrdFixed = False;
-
-
-#NOTE: Spectrum and IRF (or mono-exponential decay spectrum) data vectors require equal length!!!
-
-#define the number of rows which should be skipped during the import:
-__skipRows = 5;
-
-#file path which contains the SPECTRUM data:
-__filePathSpec = 'testData/bi207_ref/sn_5ps.dat'
-__specDataDelimiter = '\t'
-
-#file path which contains the IRF data:
-__filePathIRF = 'path to irf data'
-__irfDataDelimiter = '\t'
-
-
-#set TRUE if the irf is retrieved from a mono-exponential decay spectrum such as well annealed metals or 207-Bi (in this case, the IRF data will be ignored):
-__bUsingMonoDecaySpecForIRF = True
-
-__tau_monoDecaySpec_in_ps = 182.0 #[ps] 207-Bi
-
-__filePathMonoDecaySpec = 'testData/bi207_ref/bi207_5ps.dat'
-__monoDecaySpecDataDelimiter = '\t'
-
-
-
-#using model function for IRF?
-__bUsingModel = False
-
-#fit weighting: y variance? w = 1/sqrt(y) <--- <poisson noise> otherwise the weighting is equally distributed: w = 1
-__bUsingYVarAsWeighting = True
+#if TRUE, the fitted model function according to '__modelType' will be used as IRF data
+__bUsingModel           = False
 
 #if using model function? choose type of model (defined in DReconvolutionModel.py):
 #------------------
@@ -109,4 +56,80 @@ __bUsingYVarAsWeighting = True
 #Pseudovoigt1   = 3
 #Pearson7       = 4
 #------------------
-__modelType = reconvModel.Pearson7
+__modelType             = reconvModel.Gaussian
+
+#define the number of rows, which should be skipped during the import (e.g. for ignoring the header entries):
+__skipRows              = 5;
+
+#channel/bin resolution [ps]
+__channelResolutionInPs = 5.0
+
+#binning factor:
+__binningFactor         = 1;
+
+#expected number of components (number of exponential decay functions - LIMITED to MAX: 4):
+__numberOfExpDec        = 3
+
+#expected discrete characteristic lifetimes (tau) -> start values in units of picoseconds [ps]
+#note: the values are considered in top-down order (e.g.: for __numberOfExpDec = 2 --> __expectedTau_1_in_ps AND __expectedTau_2_in_ps are considered)
+__expectedTau_1_in_ps   = 110.0;
+__expectedTau_2_in_ps   = 375.0;
+__expectedTau_3_in_ps   = 2200.0;
+__expectedTau_4_in_ps   = 160.0;
+
+#fit weighting: y variance? w = 1/sqrt(y) <--- <assumption: poisson noise> otherwise the weighting is equally distributed: w = 1.0
+__bUsingYVarAsWeighting = True
+
+#background estimation:
+__bkgrd_startIndex      = 8900;
+__bkgrd_count           = 1000; # number of channels with respect to the 'startIndex'
+
+#fixed background? >> if True, the value of the estimated background based on the calculated mean [__bkgrd_startIndex:__bkgrd_startIndex + __bkgrd_count] will be used
+__bkgrdFixed            = False;
+
+
+#set TRUE if the irf should be retrieved from a mono-exponential decay spectrum such as well annealed metals (Al, Fe, ..) or the 207-Bi isotope using the 'graphical deconvolution' technique presented by Koechlin & Raviart (1964) (in this case, the IRF data will be ignored):
+__bUsingMonoDecaySpecForIRF               = False
+
+#fixed mono-decay component in units of picoseconds [ps] (1/lambda = tau):
+__tau_monoDecaySpec_in_ps                 = 182.0 #[ps]
+
+__filePathMonoDecaySpec                   = 'C:/Users/.../207_Bi.dat'
+__monoDecaySpecDataDelimiter              = '\t'
+
+#data pre-processing for indirect IRF extraction from a mono-exponential decay spectrum using the 'graphical deconvolution' technique presented by Koechlin & Raviart (1964):
+#1. stage: re-binning >> 2. stage: smoothing
+#Note: re-binning is only applied in case of '__bSmoothMonoDecaySpecForIRF = True'
+
+#1. stage: re-binning:
+__bReBinMonoDecaySpecForIRF               = False
+__bReBinFacMonoDecaySpecForIRF            = 4
+
+#2. stage: smoothing by Savitzky-Golay filtering:
+__bSmoothMonoDecaySpecForIRF              = False
+__SmoothingWindowDecaySpecForIRF          = 11
+__SmoothingPolynomialOrderDecaySpecForIRF = 3
+
+
+#set TRUE if the irf data should be artificially broadened (~FWHM) applying an additional convolution using a Gaussian kernel (e.g. for compensation of energy differences)
+__bUsingAdditionalGaussianKernel          = False
+
+__gaussianKernelFWHM                      = 90.2  #[ps]
+__bVaryGaussianKernelFWHM                 = False #if TRUE, this values will be used a an additional fitting parameter
+
+
+#save output as *.txt file after success?
+__saveReconvolutionSpectrum             = False
+__saveReconvolutionSpectrumPath         = 'C:/Users/.../Bi_207_analytical_additionalConvKernel_fitdata.txt'
+__saveReconvolutionSpectrumResidualPath = 'C:/Users/.../Bi_207_analytical_additionalConvKernel_residuals.txt'
+
+__saveIRFSpectrum                       = False
+__saveIRFSpectrumPath                   = 'C:/Users/.../Bi_207_analytical_additionalConvKernel_irfdata.txt'
+
+__saveReconvolutionResults              = False
+__saveReconvolutionResultsPath          = 'C:/Users/.../Bi_207_analytical_additionalConvKernel_results.txt'
+
+#Note: IRF output is only saved if the model function is used, meaning--> (__bUsingModel = True)
+__saveReconvolutionIRF                  = False
+__saveReconvolutionIRFPath              = 'output/...*txt'
+__saveReconvolutionIRFResidualPath      = 'output/...*txt'

@@ -129,7 +129,7 @@ You can cite all versions by using the <b>DOI 10.5281/zenodo.1255105</b>. This D
 ## v1.x
 DLTReconvolution v1.0:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1255106.svg)](https://doi.org/10.5281/zenodo.1255106)<br>
 DLTReconvolution v1.1:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1414107.svg)](https://doi.org/10.5281/zenodo.1414107)<br>
-DLTReconvolution v1.2:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1414107.svg)](https://doi.org/10.5281/zenodo.1414107)<br>
+DLTReconvolution v1.2:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3464523.svg)](https://doi.org/10.5281/zenodo.3464523)<br>
 
 # Requirements
 - [LMFIT](https://lmfit.github.io/lmfit-py/model.html) 

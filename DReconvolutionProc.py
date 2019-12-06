@@ -1,6 +1,6 @@
 #*************************************************************************************************
 #**
-#** DLTReconvolution v1.2 (21.09.2019)
+#** DLTReconvolution v1.3 (06.12.2019)
 #**
 #**
 #** Copyright (c) 2017 - 2019 Danny Petschke. All rights reserved.
@@ -36,6 +36,7 @@
 
 import DReconvolutionModel as functionModelList
 import DReconvolutionInput as userInput
+import DReconvolutionSpecSimulator as specSim
 
 from lmfit import Model
 import numpy as np
@@ -46,112 +47,162 @@ from scipy.signal import savgol_filter
 from scipy.stats import norm
 import sys,os
 
-def wiener_deconvolution(signal, kernel, SNR):
-    kernel = np.hstack((kernel, np.zeros(len(signal) - len(kernel)))) # zero pad the kernel to same length
-    H = np.fft.fft(kernel)
-    deconvolved = np.real(np.fft.ifft(np.fft.fft(signal)*np.conj(H)/(H*np.conj(H) + SNR**2)))
-    return deconvolved
+if userInput.__bUsingSimSpectra:
+    print("simulating spectrum & irf data...");
+    yIRF = specSim.generateGaussianIRF(binWidth_in_ps=userInput.__channelResolutionInPs, 
+                        numberOfIntegralCounts=userInput.__integralCountsGaussianIRF, 
+                        constBkgrdCounts=userInput.__constBackground,
+                        numberOfBins=userInput.__numberOfChannels,
+                        tZero_in_ps=10*userInput.__gaussianIRFFWHM,
+                        fwhm_in_ps=userInput.__gaussianIRFFWHM,
+                        noise=True,
+                        noiseLevel=1.0)
+    characLT = []
+    iLT      = []
+    
+    for i in range(0, userInput.__numberOfExpDec):
+        if i == 0:
+            characLT.append(userInput.__expectedTau_1_in_ps)
+            iLT.append(userInput.__simI_1)
+        elif i == 1:
+            characLT.append(userInput.__expectedTau_2_in_ps)
+            iLT.append(userInput.__simI_2)
+        elif i == 2:
+            characLT.append(userInput.__expectedTau_3_in_ps)
+            iLT.append(userInput.__simI_3)
+        elif i == 3:
+            characLT.append(userInput.__expectedTau_4_in_ps)
+            iLT.append(userInput.__simI_4)
+        elif i == 4:
+            characLT.append(userInput.__expectedTau_5_in_ps)
+            iLT.append(userInput.__simI_5)
 
-# only applicable on noiseless data
-def deconvolveData(ab, b):
-    AB = np.fft.fft(ab);
-    B = np.fft.fft(b);
-    deconvA = np.real(np.fft.ifft(AB/B));
-    return deconvA;
+    print(characLT)
+    print(iLT)
+        
+    xSpec,ySpec, __ = specSim.generateLTSpectrum(numberOfComponents=userInput.__numberOfExpDec, 
+                       binWidth_in_ps=userInput.__channelResolutionInPs, 
+                       integralCounts=userInput.__integralCountsSpectrum, 
+                       constBkgrdCounts=userInput.__constBackground, 
+                       numberOfBins=userInput.__numberOfChannels, 
+                       charactLifetimes_in_ps=characLT, 
+                       contributionOfLifetimes=iLT,
+                       noise=False,
+                       noiseLevel=1.0)
+    xIRF = xSpec
 
-print("importing spectrum & irf data...");
+    yIRFConv = specSim.generateGaussianIRF(binWidth_in_ps=userInput.__channelResolutionInPs, 
+                        numberOfIntegralCounts=userInput.__integralCountsSpectrum, 
+                        constBkgrdCounts=userInput.__constBackground,
+                        numberOfBins=userInput.__numberOfChannels,
+                        tZero_in_ps=10*userInput.__gaussianIRFFWHM,
+                        fwhm_in_ps=userInput.__gaussianIRFFWHM,
+                        noise=False,
+                        noiseLevel=1.0)
 
-xSpec,ySpec = np.loadtxt(userInput.__filePathSpec, delimiter=userInput.__specDataDelimiter, skiprows=userInput.__skipRows, unpack=True, dtype='float');
+    yIRFConv /= sum(yIRFConv)
+    ySpec = specSim.convolveData(ySpec, yIRFConv)
 
-if not userInput.__bUsingMonoDecaySpecForIRF:
-    xIRF,yIRF   = np.loadtxt(userInput.__filePathIRF, delimiter=userInput.__irfDataDelimiter, skiprows=userInput.__skipRows, unpack=True, dtype='float');
+    for z in range(0, len(ySpec)):
+        ySpec[z] += int(specSim.poissonNoise(ySpec[z], 1.0))
+            
+        if ySpec[z] < 0:
+            ySpec[z] = 0
+
+    print("counts: {0}".format(sum(ySpec)))
 else:
-    xIRF,yMonoDecaySpec = np.loadtxt(userInput.__filePathMonoDecaySpec, delimiter=userInput.__monoDecaySpecDataDelimiter, skiprows=userInput.__skipRows, unpack=True, dtype='float');
+    print("importing spectrum & irf data...")
 
-    #plt.semilogy(ySpec, 'ro', yMonoDecaySpec, 'bo');
-    #plt.show()
+    xSpec,ySpec = np.loadtxt(userInput.__filePathSpec, delimiter=userInput.__specDataDelimiter, skiprows=userInput.__skipRows, unpack=True, dtype='float');
 
-    if userInput.__tau_monoDecaySpec_in_ps <= 0:
-        print("Input error: negative lifetime for mono-decay spectrum detected.");
-        quit(); #kill the process on error.
+    if not userInput.__bUsingMonoDecaySpecForIRF:
+        xIRF,yIRF   = np.loadtxt(userInput.__filePathIRF, delimiter=userInput.__irfDataDelimiter, skiprows=userInput.__skipRows, unpack=True, dtype='float');
+    else:
+        xIRF,yMonoDecaySpec = np.loadtxt(userInput.__filePathMonoDecaySpec, delimiter=userInput.__monoDecaySpecDataDelimiter, skiprows=userInput.__skipRows, unpack=True, dtype='float');
 
-    yIRF = np.zeros(xSpec.size);
-    yIRF += 1 #prevent zero values
+        #plt.semilogy(ySpec, 'ro', yMonoDecaySpec, 'bo');
+        #plt.show()
 
-    if userInput.__bSmoothMonoDecaySpecForIRF:
-        if userInput.__bReBinMonoDecaySpecForIRF:
-            newLength = 1+((int)(len(xIRF)/userInput.__bReBinFacMonoDecaySpecForIRF))
-            
-            rebin = 0;
-            yMonoSpecIRFRebinned = np.zeros(newLength)
-            xValRebinned         = np.zeros(newLength)
+        if userInput.__tau_monoDecaySpec_in_ps <= 0:
+            print("Input error: negative lifetime for mono-decay spectrum detected.");
+            quit(); #kill the process on error.
 
-            for i in range(0, len(xIRF)):
-                xValRebinned[rebin]          = rebin*userInput.__bReBinFacMonoDecaySpecForIRF;
-                yMonoSpecIRFRebinned[rebin] += yMonoDecaySpec[i]
+        yIRF = np.zeros(xSpec.size);
+        yIRF += 1 #prevent zero values
 
-                if (((i+1)%userInput.__bReBinFacMonoDecaySpecForIRF) == 1):
-                    rebin += 1
+        if userInput.__bSmoothMonoDecaySpecForIRF:
+            if userInput.__bReBinMonoDecaySpecForIRF:
+                newLength = 1+((int)(len(xIRF)/userInput.__bReBinFacMonoDecaySpecForIRF))
+                
+                rebin = 0;
+                yMonoSpecIRFRebinned = np.zeros(newLength)
+                xValRebinned         = np.zeros(newLength)
 
-            yMonoSpecIRFRebinned[0] = yMonoSpecIRFRebinned[1]
-            
-            sv = savgol_filter(yMonoSpecIRFRebinned, userInput.__SmoothingWindowDecaySpecForIRF, userInput.__SmoothingPolynomialOrderDecaySpecForIRF) 
-            cs = CubicSpline(xValRebinned, sv)
+                for i in range(0, len(xIRF)):
+                    xValRebinned[rebin]          = rebin*userInput.__bReBinFacMonoDecaySpecForIRF;
+                    yMonoSpecIRFRebinned[rebin] += yMonoDecaySpec[i]
 
-            #plt.semilogy(yMonoSpecIRFRebinned, 'r');
-            #plt.semilogy(cs(xValRebinned), 'bo');
-            #plt.show()
+                    if (((i+1)%userInput.__bReBinFacMonoDecaySpecForIRF) == 1):
+                        rebin += 1
 
-            for i in range(0, len(yMonoDecaySpec)):
-                if cs(xIRF[i]) < 0.0:
-                    yMonoDecaySpec[i] = 0.0
-                else:
-                    yMonoDecaySpec[i] = cs(xIRF[i])
+                yMonoSpecIRFRebinned[0] = yMonoSpecIRFRebinned[1]
+                
+                sv = savgol_filter(yMonoSpecIRFRebinned, userInput.__SmoothingWindowDecaySpecForIRF, userInput.__SmoothingPolynomialOrderDecaySpecForIRF) 
+                cs = CubicSpline(xValRebinned, sv)
 
+                #plt.semilogy(yMonoSpecIRFRebinned, 'r');
+                #plt.semilogy(cs(xValRebinned), 'bo');
+                #plt.show()
+
+                for i in range(0, len(yMonoDecaySpec)):
+                    if cs(xIRF[i]) < 0.0:
+                        yMonoDecaySpec[i] = 0.0
+                    else:
+                        yMonoDecaySpec[i] = cs(xIRF[i])
+
+                # formula according to Koechlin & Raviart (1964)
+                for i in range(1, len(xIRF)-1):
+                    yIRF[i] = yMonoDecaySpec[i] + (userInput.__tau_monoDecaySpec_in_ps/(2*userInput.__channelResolutionInPs))*(yMonoDecaySpec[i+1] - yMonoDecaySpec[i-1])
+                    
+                    if yIRF[i] < 0:
+                        yIRF[i] = 0
+
+                yIRF[0] = yIRF[1]
+                yIRF[len(yIRF)-1] = yIRF[len(yIRF)-2]
+                
+                #plt.semilogy(yIRF, 'r');
+                #plt.semilogy(yMonoDecaySpec, 'bo');
+                #plt.show()
+            else:
+                sv = savgol_filter(yMonoDecaySpec, userInput.__SmoothingWindowDecaySpecForIRF, userInput.__SmoothingPolynomialOrderDecaySpecForIRF) 
+                cs = CubicSpline(xIRF, sv)
+                
+                # formula according to Koechlin & Raviart (1964)
+                for i in range(1, len(xIRF)-1):
+                    yIRF[i] = cs(xIRF[i]) + (userInput.__tau_monoDecaySpec_in_ps/(2*userInput.__channelResolutionInPs))*(cs(xIRF[i+1]) - cs(xIRF[i-1]))
+
+                    if yIRF[i] < 0:
+                        yIRF[i] = 0
+
+                yIRF[0] = yIRF[1]
+                yIRF[len(yIRF)-1] = yIRF[len(yIRF)-2]
+                
+                #plt.semilogy(xIRF, cs(xIRF), 'r');
+                #plt.semilogy(yIRF, 'ro', yMonoDecaySpec, 'bo');
+                #plt.show()
+        else:
             # formula according to Koechlin & Raviart (1964)
             for i in range(1, len(xIRF)-1):
                 yIRF[i] = yMonoDecaySpec[i] + (userInput.__tau_monoDecaySpec_in_ps/(2*userInput.__channelResolutionInPs))*(yMonoDecaySpec[i+1] - yMonoDecaySpec[i-1])
+
+                if yIRF[i] < 0:
+                        yIRF[i] = 0
+
+            yIRF[0] = yIRF[1]
+            yIRF[len(yIRF)-1] = yIRF[len(yIRF)-2]
                 
-                if yIRF[i] < 0:
-                    yIRF[i] = 0
-
-            yIRF[0] = yIRF[1]
-            yIRF[len(yIRF)-1] = yIRF[len(yIRF)-2]
-            
-            #plt.semilogy(yIRF, 'r');
-            #plt.semilogy(yMonoDecaySpec, 'bo');
+            #plt.semilogy(yIRF, 'bo', yMonoDecaySpec, 'r');
             #plt.show()
-        else:
-            sv = savgol_filter(yMonoDecaySpec, userInput.__SmoothingWindowDecaySpecForIRF, userInput.__SmoothingPolynomialOrderDecaySpecForIRF) 
-            cs = CubicSpline(xIRF, sv)
-            
-            # formula according to Koechlin & Raviart (1964)
-            for i in range(1, len(xIRF)-1):
-                yIRF[i] = cs(xIRF[i]) + (userInput.__tau_monoDecaySpec_in_ps/(2*userInput.__channelResolutionInPs))*(cs(xIRF[i+1]) - cs(xIRF[i-1]))
-
-                if yIRF[i] < 0:
-                    yIRF[i] = 0
-
-            yIRF[0] = yIRF[1]
-            yIRF[len(yIRF)-1] = yIRF[len(yIRF)-2]
-            
-            #plt.semilogy(xIRF, cs(xIRF), 'r');
-            #plt.semilogy(yIRF, 'ro', yMonoDecaySpec, 'bo');
-            #plt.show()
-    else:
-        # formula according to Koechlin & Raviart (1964)
-        for i in range(1, len(xIRF)-1):
-            yIRF[i] = yMonoDecaySpec[i] + (userInput.__tau_monoDecaySpec_in_ps/(2*userInput.__channelResolutionInPs))*(yMonoDecaySpec[i+1] - yMonoDecaySpec[i-1])
-
-            if yIRF[i] < 0:
-                    yIRF[i] = 0
-
-        yIRF[0] = yIRF[1]
-        yIRF[len(yIRF)-1] = yIRF[len(yIRF)-2]
-            
-        #plt.semilogy(yIRF, 'bo', yMonoDecaySpec, 'r');
-        #plt.show()
-
 
 yIRFOrigin = yIRF;
 

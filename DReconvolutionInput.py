@@ -1,6 +1,6 @@
 #*************************************************************************************************
 #**
-#** DLTReconvolution v1.2 (21.09.2019)
+#** DLTReconvolution v1.3 (06.12.2019)
 #**
 #**
 #** Copyright (c) 2017 - 2019 Danny Petschke. All rights reserved.
@@ -72,8 +72,8 @@ __numberOfExpDec        = 3
 
 #expected discrete characteristic lifetimes (tau) -> start values in units of picoseconds [ps]
 #note: the values are considered in top-down order (e.g.: for __numberOfExpDec = 2 --> __expectedTau_1_in_ps AND __expectedTau_2_in_ps are considered)
-__expectedTau_1_in_ps   = 110.0;
-__expectedTau_2_in_ps   = 375.0;
+__expectedTau_1_in_ps   = 108.0;
+__expectedTau_2_in_ps   = 385.0;
 __expectedTau_3_in_ps   = 2200.0;
 __expectedTau_4_in_ps   = 160.0;
 
@@ -81,7 +81,7 @@ __expectedTau_4_in_ps   = 160.0;
 __bUsingYVarAsWeighting = True
 
 #background estimation:
-__bkgrd_startIndex      = 8900;
+__bkgrd_startIndex      = 9000;
 __bkgrd_count           = 1000; # number of channels with respect to the 'startIndex'
 
 #fixed background? >> if True, the value of the estimated background based on the calculated mean [__bkgrd_startIndex:__bkgrd_startIndex + __bkgrd_count] will be used
@@ -116,6 +116,22 @@ __bUsingAdditionalGaussianKernel          = False
 
 __gaussianKernelFWHM                      = 90.2  #[ps]
 __bVaryGaussianKernelFWHM                 = False #if TRUE, this values will be used a an additional fitting parameter
+
+#set TRUE if synthetically generated data should be used:
+__bUsingSimSpectra                        = True
+
+__gaussianIRFFWHM                         = 235.0 #[ps]
+
+__numberOfChannels                        = 10000
+__integralCountsSpectrum                  = 5000000
+__integralCountsGaussianIRF               = 5000000
+__constBackground                         = 10
+
+__simI_1                                  = 0.85
+__simI_2                                  = 0.147
+__simI_3                                  = 0.003
+__simI_4                                  = 0.0
+__simI_5                                  = 0.0
 
 
 #save output as *.txt file after success?

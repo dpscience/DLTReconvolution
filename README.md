@@ -120,6 +120,11 @@ __saveReconvolutionIRFResidualPath      = 'output/...*txt'
 
 Note: all parameter estimations required for the best model fit using the levenberg marquardt algorithm are done automatically. 
 
+# Related Publications
+
+### March 2020
+[Limitations on the positron lifetime spectra decomposability applying the iterative least-square re-convolution method using the instrumental responses obtained from 207-Bi and 60-Co, Acta Physica Polonica A](http://doi.org/10.12693/APhysPolA.137.171).<br><br>  
+
 # How to cite this Software?
 
 You can cite all versions by using the <b>DOI 10.5281/zenodo.1255105</b>. This DOI represents all versions, and will always resolve to the latest one.<br>

@@ -6,6 +6,9 @@ Support this project and keep always updated about recent software releases, bug
 
 # DLTReconvolution
 
+![badge-language](https://img.shields.io/badge/language-Python-blue)
+![badge-license](https://img.shields.io/badge/license-BSD-green)
+
 Copyright (c) 2017-2019 Danny Petschke (danny.petschke@uni-wuerzburg.de). All rights reserved.<br><br>
 <b>DLTReconvolution</b> - A Python based software for the analysis of lifetime spectra using the iterative least-square reconvolution method.<br>
 
@@ -24,7 +27,7 @@ This program allows the analysis of lifetime spectra using ...
 `DReconvolutionModel.py`<br>
 `DReconvolutionProc.py`<br>
 
-* <b>edit</b> the input file `DReconvolutionInput.py` or just start the demonstration using the provided test data set
+* <b>edit</b> the input file `DReconvolutionInput.py` or just start the demonstration using the provided test data set:
 
 ```python
 # note: spectrum and IRF (or mono-exponential decay spectrum) data vectors require equal length!
@@ -123,9 +126,9 @@ __saveReconvolutionIRFPath              = 'output/...*txt'
 __saveReconvolutionIRFResidualPath      = 'output/...*txt'
 ```
 
-* <b>execute</b> `DReconvolutionProc.py`<br>
+* <b>execute</b> `DReconvolutionProc.py`<br>.
 
-* <b>finished</b>. You should see the results as shown above in the figures
+* <b>finished</b>. You should see the results as shown above in the figures.
 
 # Related Publications using this Program
 

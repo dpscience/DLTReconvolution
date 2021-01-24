@@ -126,7 +126,7 @@ __saveReconvolutionIRFPath              = 'output/...*txt'
 __saveReconvolutionIRFResidualPath      = 'output/...*txt'
 ```
 
-* <b>execute</b> `DReconvolutionProc.py`<br>.
+* <b>execute</b> `DReconvolutionProc.py`.
 
 * <b>finished</b>. You should see the results as shown above in the figures.
 

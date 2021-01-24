@@ -145,13 +145,13 @@ You can cite all versions by using the <b>DOI 10.5281/zenodo.1255105</b>. This D
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1255105.svg)](https://doi.org/10.5281/zenodo.1255105)
 
 ## ``v1.x``
-<b>DLTReconvolution v1.0</b><br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1255106.svg)](https://doi.org/10.5281/zenodo.1255106)<br>
-<b>DLTReconvolution v1.1</b><br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1414107.svg)](https://doi.org/10.5281/zenodo.1414107)<br>
 <b>DLTReconvolution v1.2</b><br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3464523.svg)](https://doi.org/10.5281/zenodo.3464523)<br>
+<b>DLTReconvolution v1.1</b><br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1414107.svg)](https://doi.org/10.5281/zenodo.1414107)<br>
+<b>DLTReconvolution v1.0</b><br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1255106.svg)](https://doi.org/10.5281/zenodo.1255106)<br>
 
 # License of DLTReconvolution (BSD-3-Clause)
 
-Copyright (c) 2017-2019 Danny Petschke (danny.petschke@uni-wuerzburg.de). All rights reserved.<br><br>
+Copyright (c) 2017-2019 Danny Petschke (danny.petschke@uni-wuerzburg.de). All rights reserved.<br>
 
 Redistribution and use in source and binary forms, with or without modification,<br> 
 are permitted provided that the following conditions are met:<br><br>
@@ -166,7 +166,6 @@ are permitted provided that the following conditions are met:<br><br>
  3. Neither the name of the copyright holder "Danny Petschke" nor the names of<br> 
     its contributors may be used to endorse or promote products derived from <br>
     this software without specific prior written permission.<br><br>
-
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS<br> 
  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF<br> 
